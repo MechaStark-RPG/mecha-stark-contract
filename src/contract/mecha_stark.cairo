@@ -2,6 +2,7 @@
 mod MechaStark {
     use starknet::ContractAddress;
     use mecha_stark::business_logic::storage::GameStorageAccess;
+    use mecha_stark::business_logic::map::U256TryIntoAction;
     use mecha_stark::business_logic::serde::SpanSerde;
 
     struct Storage {
