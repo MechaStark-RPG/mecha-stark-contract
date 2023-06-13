@@ -161,7 +161,7 @@ impl GameStorageAccess of StorageAccess<Game> {
     let mechas_ids_base = storage_base_address_from_felt252(storage_address_from_base_and_offset(base, 4_u8).into());
     let mechas_ids = StorageAccess::read(address_domain, mechas_ids_base)?;
 
-    let players_base = storage_base_address_from_felt252(storage_address_from_base_and_offset(base, 4_u8).into());
+    let players_base = storage_base_address_from_felt252(storage_address_from_base_and_offset(base, 5_u8).into());
     let players = StorageAccess::read(address_domain, map_id_base)?;
 
     Result::Ok( Game { turn_id, current_player_turn, winner, map_id, mechas_ids, players  })
@@ -169,6 +169,21 @@ impl GameStorageAccess of StorageAccess<Game> {
 
   fn write(address_domain: u32, base: StorageBaseAddress, mut value: Game) -> SyscallResult<()> {
     let turn_id_base = storage_base_address_from_felt252(storage_address_from_base_and_offset(base, 0_u8).into());
-    StorageAccess::write(address_domain, turn_id_base, value.turn_id)
+    StorageAccess::write(address_domain, turn_id_base, value.turn_id)?;
+
+    let current_player_turn_base = storage_base_address_from_felt252(storage_address_from_base_and_offset(base, 1_u8).into());
+    StorageAccess::write(address_domain, current_player_turn_base, value.current_player_turn)?;
+
+    let winner_base = storage_base_address_from_felt252(storage_address_from_base_and_offset(base, 3_u8).into());
+    StorageAccess::write(address_domain, winner_base, value.winner)?;
+
+    let map_id_base = storage_base_address_from_felt252(storage_address_from_base_and_offset(base, 4_u8).into());
+    StorageAccess::write(address_domain, map_id_base, value.map_id)?;
+
+    let mechas_ids_base = storage_base_address_from_felt252(storage_address_from_base_and_offset(base, 5_u8).into());
+    StorageAccess::write(address_domain, mechas_ids_base, value.mechas_ids)?;
+
+    let players_base = storage_base_address_from_felt252(storage_address_from_base_and_offset(base, 6_u8).into());
+    StorageAccess::write(address_domain, players_base, value.players)
   }
 }
