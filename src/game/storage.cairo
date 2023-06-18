@@ -9,7 +9,7 @@ use starknet::{
 
 use integer::{Felt252TryIntoU128, U128IntoFelt252};
 
-use mecha_stark::entities::{Game};
+use mecha_stark::game::entities::{Game};
 
 // impl ContractAddressSpanStorageAccess of StorageAccess<Span<ContractAddress>> {
 //     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Span<ContractAddress>> {
@@ -219,4 +219,6 @@ impl GameStorageAccess of StorageAccess<Game> {
         // StorageAccess::write(address_domain, players_base, value.players)
         SyscallResult::Ok(())
     }
+
+    
 }

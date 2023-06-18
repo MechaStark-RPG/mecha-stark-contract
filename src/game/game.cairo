@@ -1,13 +1,13 @@
 use mecha_stark::game::entities::{Action, Game, Position};
 
-#[starknet::interface]
-trait IMechaStarkContract<T> {
-    fn create_game(ref self: T);
-    fn validate_game(ref self: T, actions: Array<Action>);
-    fn get_game(self: @T, id_game: u128) -> u32;
+#[abi]
+trait IMechaStarkContract {
+    fn create_game();
+    fn validate_game(actions: Array<Action>);
+    fn get_game(id_game: u128) -> u32;
 }
 
-#[starknet::contract]
+#[contract]
 mod MechaStarkContract {
     
     use traits::Into;
@@ -15,36 +15,43 @@ mod MechaStarkContract {
     use starknet::ContractAddress;
 
     use super::{Action, Game, Position};
-    // use mecha_stark::storage::{GameStorageAccess};
+    use super::IMechaStarkContract;
+    // use mecha_stark::game::storage::{GameStorageAccess};
     // use mecha_stark::serde::{SpanSerde};
 
-    #[storage]
     struct Storage {
-        counter: u128, 
+        counter: u128
         // game: LegacyMap::<u128, Game>,
     }
 
     #[constructor]
-    fn init(ref self: ContractState, initial_counter: u128) {
-        self.counter.write(initial_counter);
+    fn init(initial_counter: u128) {
+        counter::write(initial_counter);
     }
 
-    #[external(v0)]
-    impl MechaStarkContract of super::IMechaStarkContract<ContractState> {
+    // impl MechaStarkContractImpl of IMechaStarkContract {
         
-        fn create_game(ref self: ContractState) {
-
-        }
-        
-        fn validate_game(ref self: ContractState, actions: Array<Action>) {
-            let mut action_0 = *actions.at(0);
-            // self.counter.read()
-            // action_0.id_mecha
-            // action_0.attack.x
-        }
-
-        fn get_game(self: @ContractState, id_game: u128) -> u32 {
-            100
-        }
+    #[external]
+    fn create_game() {
+        // falta implementar el storage
     }
+    
+    #[external]
+    // crear un array de actions con el botardo
+    fn validate_game(actions: Array<Action>) {
+        // TEMPORAL: crear un metodo que cree el state del juego(los mechas se cargan)
+        // hacer validadciones de cada jugada y actualizar el state del juego
+        // ver quien gano
+
+        let mut action_0 = *actions.at(0);
+        // self.counter.read()
+        // action_0.id_mecha
+        // action_0.attack.x
+    }
+
+    #[view]
+    fn get_game(id_game: u128) -> u32 {
+        100
+    }
+    // }
 }
