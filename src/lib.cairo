@@ -1,4 +1,2 @@
 mod game;
-mod entities;
-// mod storage;
-// mod serde;
+mod tests;
