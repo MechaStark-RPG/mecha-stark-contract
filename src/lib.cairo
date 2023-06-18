@@ -1,2 +1,4 @@
-mod business_logic;
-mod contract;
+mod game;
+mod entities;
+// mod storage;
+// mod serde;

@@ -2,4 +2,8 @@
 name = "mecha_stark"
 version = "0.1.0"
 
+# See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest
+
 [dependencies]
+starknet = ">=2.0.0-rc0"
+# foo = { path = "vendor/foo" }
