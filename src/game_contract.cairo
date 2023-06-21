@@ -55,67 +55,26 @@ mod MechaStarkContract {
             if idx == turns.len() {
                 break ();
             }
-
             let mut idy = 0;
             let mut actions: Span<Action> = *turns.at(idx).actions;
             let player = *turns.at(idx).player;
             
             loop {
-
                 if idy == actions.len() {
                     break ();
                 }
 
                 let action = *actions.at(idx);
-                match action.first_action {
-                    TypeAction::Movement (()) => {
-                        
-                        let is_valid_action = validate_action(player, TypeAction::Movement (()), action, ref mecha_dict, ref mecha_static_data);
-                        if is_valid_action == false {
-                            break ();
-                        }
-                        // actualizo el state
-                        // actualizar la position del mecha
-                        mecha_dict.update_mecha_position(action.id_mecha, action.movement);
-
-                        let is_valid_action = validate_action(player, TypeAction::Attack (()), action, ref mecha_dict, ref mecha_static_data);
-                        if is_valid_action == false {
-                            break ();
-                        }
-
-                        // actualizo el state
-                        // actualizar el hp del mecha atacado
-                        let (_, mecha_attack) = mecha_static_data.get_mecha_data_by_mecha_id(action.id_mecha);
-                        let mecha_received_id = mecha_dict.get_mecha_id_by_position(action.attack);
-                        if mecha_received_id > 0 {
-                            let mecha_received_hp = mecha_dict.get_mecha_hp(mecha_received_id);
-                            mecha_dict.update_mecha_hp(mecha_received_id, mecha_received_hp - mecha_attack.attack);
-                        }
-                    },
-                    TypeAction::Attack (()) => {
-                        
-                        let is_valid_action = validate_action(player, TypeAction::Attack (()), action, ref mecha_dict, ref mecha_static_data);
-                        if is_valid_action == false {
-                            break ();
-                        }
-                        // actualizo el state
-                        let (_, mecha_attack) = mecha_static_data.get_mecha_data_by_mecha_id(action.id_mecha);
-                        let mecha_received_id = mecha_dict.get_mecha_id_by_position(action.attack);
-                        if mecha_received_id > 0 {
-                            let mecha_received_hp = mecha_dict.get_mecha_hp(mecha_received_id);
-                            mecha_dict.update_mecha_hp(mecha_received_id, mecha_received_hp - mecha_attack.attack);
-                        }
-
-                        let is_valid_action = validate_action(player, TypeAction::Movement (()), action, ref mecha_dict, ref mecha_static_data);
-                        if is_valid_action == false {
-                            break ();
-                        }
-                        // actualizo el state
-                        // actualizar la position del mecha
-                        mecha_dict.update_mecha_position(action.id_mecha, action.movement);
-                        
-                    },
+                if !validate_and_execute_action(player, action, ref mecha_dict, ref mecha_static_data) {
+                    // HIZO TRAMPA
+                    break ();
                 }
+
+                // if is_game_finished(player, ref mecha_dict, ref mecha_static_data) {
+                //     // TERMINO EL JUEGO
+                //     // Guardar el estado final
+                // }
+
                 // valido si termino el juego
                 idy += 1;
             };
@@ -123,49 +82,104 @@ mod MechaStarkContract {
         }
     }
 
-    fn validate_action(player: ContractAddress, type_action: TypeAction, action: Action, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool {
+    // fn is_game_finished(owner: ContractAddress, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool {
+    //     let id_mechas_by_owner = mecha_static_data.get_mechas_ids_by_owner(owner);
+    //     let mut idx = 0;
+    //     let mut mechas_dead = 0;
+    //     loop {
+    //         if idx == id_mechas_by_owner.len() {
+    //             break ();
+    //         }
+    //         let id_mecha = *id_mechas_by_owner.at(idx);
+    //         if mecha_dict.get_mecha_hp(id_mecha) == 0 {
+    //             mechas_dead += 1;
+    //         }
+    //         idx += 1;
+    //     };
+    //     mechas_dead == id_mechas_by_owner.len()
+    // }
 
-        match type_action {
-            TypeAction::Movement (()) => {
-                assert(is_valid_position(action.movement) == true, 'error position out of map');
-                if is_valid_position(action.movement) == false {
+    fn validate_and_execute_action(player: ContractAddress, action: Action, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool {
+        match action.first_action {
+            TypeAction::Movement(()) => {
+                if !validate_movement(player, action, ref mecha_dict, ref mecha_static_data) {
                     return false;
                 }
-
-                if mecha_dict.get_mecha_id_by_position(action.movement.into()) == 0 {
+                update_mecha_position(action.id_mecha, action.movement, ref mecha_dict);
+                
+                if !validate_attack(player, action, ref mecha_dict, ref mecha_static_data) {
                     return false;
                 }
-
-                let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(action.id_mecha); 
-                let mecha_distance = distance(
-                        mecha_dict.get_position_by_mecha_id(action.id_mecha), 
-                        action.movement
-                    );
-                if mecha_distance > mecha_attributes.movement {
-                    return false;
-                }
+                update_mecha_hp(action, ref mecha_dict, ref mecha_static_data);
             },
-            TypeAction::Attack (()) => {
-                assert(is_valid_position(action.attack) == true, 'error position out of map');
-                if is_valid_position(action.attack) == false {
+            TypeAction::Attack(()) => {
+                if !validate_attack(player, action, ref mecha_dict, ref mecha_static_data) {
                     return false;
                 }
-
-                if mecha_dict.get_mecha_id_by_position(action.attack.into()) == 0 {
+                update_mecha_hp(action, ref mecha_dict, ref mecha_static_data);
+                
+                if !validate_movement(player, action, ref mecha_dict, ref mecha_static_data) {
                     return false;
                 }
-
-                let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(action.id_mecha); 
-                let mecha_distance = distance(
-                        mecha_dict.get_position_by_mecha_id(action.id_mecha), 
-                        action.attack
-                    );
-                if mecha_distance > mecha_attributes.attack_shoot_distance {
-                    return false;
-                }
+                update_mecha_position(action.id_mecha, action.movement, ref mecha_dict);
             },
         }
+        return true;
+    }
+
+    fn validate_movement(player: ContractAddress, action: Action, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool {
+        if !is_valid_position(action.movement) {
+            return false;
+        }
+
+        if mecha_dict.get_mecha_id_by_position(action.movement.into()) == 0 {
+            return false;
+        }
+
+        let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(action.id_mecha); 
+        let mecha_distance = distance(
+            mecha_dict.get_position_by_mecha_id(action.id_mecha), 
+            action.movement
+        );
+        if mecha_distance > mecha_attributes.movement {
+            return false;
+        }
+
         true
+    }
+
+    fn validate_attack(player: ContractAddress, action: Action, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool {
+        if !is_valid_position(action.attack) {
+            return false;
+        }
+
+        if mecha_dict.get_mecha_id_by_position(action.attack.into()) == 0 {
+            return false;
+        }
+
+        let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(action.id_mecha); 
+        let mecha_distance = distance(
+            mecha_dict.get_position_by_mecha_id(action.id_mecha), 
+            action.attack
+        );
+        if mecha_distance > mecha_attributes.attack_shoot_distance {
+            return false;
+        }
+        true
+    }
+
+    fn update_mecha_position(id_mecha: u128, movement: Position, ref mecha_dict: MechaDict) {
+        mecha_dict.update_mecha_position(id_mecha, movement);
+    }
+
+    fn update_mecha_hp(action: Action, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) {
+        let (_, mecha_attack) = mecha_static_data.get_mecha_data_by_mecha_id(action.id_mecha);
+        let mecha_received_id = mecha_dict.get_mecha_id_by_position(action.attack);
+        if mecha_received_id > 0 {
+            let mecha_received_hp = mecha_dict.get_mecha_hp(mecha_received_id);
+            // fijarse que no se pase a negativo
+            mecha_dict.update_mecha_hp(mecha_received_id, mecha_received_hp - mecha_attack.attack);
+        }
     }
 
     fn is_valid_position(position: Position) -> bool {
@@ -177,15 +191,6 @@ mod MechaStarkContract {
         let y = initial.y - target.y;
         let ret: felt252 = u128_sqrt(x * x + y * y).into();
         ret.try_into().unwrap()
-    }
-
-    fn validate_movement(initial_position: Position, candidate_position: Position, attributes: MechaAttributes) -> bool {
-        if !is_valid_position(initial_position) & !is_valid_position(candidate_position) {
-            return false;
-        }
-
-        return true;
-
     }
 
     fn load_initial_state(game_state: GameState) -> MechaDict {
