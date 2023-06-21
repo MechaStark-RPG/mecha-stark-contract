@@ -6,9 +6,10 @@ use starknet::ContractAddress;
 use mecha_stark::components::game::{MechaAttributes, MechaAttributesTrait};
 use mecha_stark::components::game_state::{MechaState, MechaStateTrait};
 use mecha_stark::components::position::{
-    Position, IntoU128ToPositionImpl, IntoPositionToU128Impl, IntoFelt252ToPositionImpl,
+    Position, PositionTrait, IntoU128ToPositionImpl, IntoPositionToU128Impl, IntoFelt252ToPositionImpl,
     IntoPositionToFelt252Impl, PositionPartialEq
 };
+use mecha_stark::utils::constants::Constants;
 
 #[derive(Drop)]
 struct MechaStaticData {
@@ -81,12 +82,15 @@ impl MechaDictTraitImpl of MechaDictTrait {
         position_attack: Position,
         ref mecha_static_data: MechaStaticData
     ) {
-        let (_, mecha_attack) = mecha_static_data.get_mecha_data_by_mecha_id(id_mecha);
+        let (_, mecha_attack_attribute) = mecha_static_data.get_mecha_data_by_mecha_id(id_mecha);
         let mecha_received_id = self.get_mecha_id_by_position(position_attack);
-        if mecha_received_id > 0 {
-            let mecha_received_hp = self.get_mecha_hp(mecha_received_id);
-            // fijarse que no se pase a negativo
-            self.hp.insert(mecha_received_id.into(), mecha_received_hp - mecha_attack.attack);
+        let mecha_received_hp = self.get_mecha_hp(mecha_received_id);
+        // fijarse que no se pase a negativo
+        if mecha_received_hp < mecha_attack_attribute.attack {
+            self.set_mecha_hp(mecha_received_id, 0);
+            self.update_mecha_position(mecha_received_id, PositionTrait::new_default_value());
+        } else {
+            self.set_mecha_hp(mecha_received_id, mecha_received_hp - mecha_attack_attribute.attack);
         }
     }
 }
@@ -116,7 +120,7 @@ impl MechaStaticDataImpl of MechaStaticDataTrait {
     }
 
     fn get_mechas_ids_by_owner(self: @MechaStaticData, owner: ContractAddress) -> Array<u128> {
-        let mut mechas: Array<u128> = ArrayTrait::new();
+        let mechas: Array<u128> = ArrayTrait::new();
         _get_mechas_by_owner(self, owner, 0, mechas)
     }
 

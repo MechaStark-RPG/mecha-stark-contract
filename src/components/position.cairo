@@ -12,6 +12,8 @@ struct Position {
 
 trait PositionTrait {
     fn distance(self: @Position, target: Position) -> u128;
+    fn has_default_value(self: @Position) -> bool;
+    fn new_default_value() -> Position;
 }
 
 impl PositionTraitImpl of PositionTrait {
@@ -20,6 +22,12 @@ impl PositionTraitImpl of PositionTrait {
         let y = *self.y - target.y;
         let ret: felt252 = u128_sqrt(x * x + y * y).into();
         ret.try_into().unwrap()
+    }
+    fn has_default_value(self: @Position) -> bool {
+        *self.x == 100 & *self.y == 100  
+    }
+    fn new_default_value() -> Position {
+        Position { x: 100, y: 100 }
     }
 }
 

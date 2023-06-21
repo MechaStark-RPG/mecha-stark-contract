@@ -47,14 +47,13 @@ impl ActionTraitImpl of ActionTrait {
         ref mecha_dict: MechaDict,
         ref mecha_static_data: MechaStaticData
     ) -> bool {
-        if !is_valid_position(*self.attack) {
+
+        // Donde ataco dentro del mapa
+        if !position_within_the_map(*self.attack) {
             return false;
         }
 
-        if mecha_dict.get_mecha_id_by_position(*self.attack.into()) == 0 {
-            return false;
-        }
-
+        // Esta dentro del rango de ataque
         let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(*self.id_mecha);
         let mecha_distance = mecha_dict
             .get_position_by_mecha_id(*self.id_mecha)
@@ -62,6 +61,21 @@ impl ActionTraitImpl of ActionTrait {
         if mecha_distance > mecha_attributes.attack_shoot_distance {
             return false;
         }
+
+        // Hay un mecha enemigo en esa posicion
+        let mecha_id_received = mecha_dict.get_mecha_id_by_position(*self.attack.into());
+        if mecha_id_received == 0 {
+            return false;
+        }
+        let (owner_received, _) = mecha_static_data.get_mecha_data_by_mecha_id(mecha_id_received);
+        if owner_received == player {
+            return false;
+        }
+        let mecha_id_received_hp = mecha_dict.get_mecha_hp(mecha_id_received);
+        if mecha_id_received_hp == 0 {
+            return false;
+        }
+
         true
     }
 
@@ -71,7 +85,8 @@ impl ActionTraitImpl of ActionTrait {
         ref mecha_dict: MechaDict,
         ref mecha_static_data: MechaStaticData
     ) -> bool {
-        if !is_valid_position(*self.movement) {
+
+        if !position_within_the_map(*self.movement) {
             return false;
         }
 
@@ -114,6 +129,6 @@ impl IntoActionFelt252Impl of Into<felt252, TypeAction> {
     }
 }
 
-fn is_valid_position(position: Position) -> bool {
+fn position_within_the_map(position: Position) -> bool {
     position.x < Constants::BOARD_HEIGHT & position.y < Constants::BOARD_WIDTH
 }

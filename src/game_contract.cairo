@@ -17,7 +17,7 @@ mod MechaStarkContract {
     use mecha_stark::components::turn::{Action, ActionTrait, TypeAction, Turn};
     use mecha_stark::components::game::{Game, MechaAttributes};
     use mecha_stark::components::game_state::{GameState, PlayerState, MechaState};
-    use mecha_stark::components::position::{Position};
+    use mecha_stark::components::position::{Position, PositionTrait};
     use mecha_stark::components::mecha_data_helper::{
         MechaDict, MechaDictTrait, MechaStaticData, MechaStaticDataTrait
     };
@@ -27,12 +27,12 @@ mod MechaStarkContract {
     use super::IMechaStarkContract;
 
     struct Storage {
-        _count_games: u128,
         _owner: ContractAddress,
         _token: ContractAddress,
+        _count_games: u128,
         _game: LegacyMap::<u128, Game>,
-        _players: LegacyMap::<(u128, ContractAddress), ContractAddress>,
-        _mechas_ids: LegacyMap::<(u128, ContractAddress), ContractAddress>,
+        _players: LegacyMap::<(u128, u128), ContractAddress>,
+        _mechas_ids: LegacyMap::<(u128, u128), ContractAddress>,
     }
 
     #[external]
@@ -54,6 +54,8 @@ mod MechaStarkContract {
             let mut actions: Span<Action> = *turns.at(idx).actions;
             let player = *turns.at(idx).player;
 
+            // Validar que el jugador sea el que le toca
+            
             loop {
                 if idy == actions.len() {
                     break ();
@@ -66,17 +68,61 @@ mod MechaStarkContract {
                     // HIZO TRAMPA
                     break ();
                 }
-
-                // if is_game_finished(player, ref mecha_dict, ref mecha_static_data) {
-                //     // TERMINO EL JUEGO
-                //     // Guardar el estado final
-                // }
+                if is_game_finished(
+                    game_state.players, ref mecha_dict, ref mecha_static_data
+                ) { // TERMINO EL JUEGO
+                // Guardar el estado final
+                }
 
                 idy += 1;
             };
             idx += 1;
         }
     }
+
+    fn is_game_finished(
+        players: Span<PlayerState>,
+        ref mecha_dict: MechaDict,
+        ref mecha_static_data: MechaStaticData
+    ) -> bool {
+        // let mut idx = 0;
+        // let mut live_players = 0;
+        // loop {
+        //     if idx == players.len() {
+        //         break ();
+        //     }
+        //     if live_players == 2 {
+        //         break ();
+        //     }
+        //     let player = *players.at(idx).owner;
+        //     if !is_player_finished(player, ref mecha_dict, ref mecha_static_data) {
+        //         live_players += 1;
+        //     }
+        //     idx += 1;
+        // };
+        // live_players == 1
+        true
+    }
+
+    // fn is_player_finished(
+    //     player: ContractAddress, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData
+    // ) -> bool {
+    //     let  mechas_by_player = mecha_static_data.get_mechas_ids_by_owner(player);
+    //     let mut idx = 0;
+    //     let mut dead_mechas = 0;
+    //     loop {
+    //         if idx == mechas_by_player.len() {
+    //             break ();
+    //         }
+    //         let mecha_id = *mechas_by_player.at(idx);
+    //         let mecha_hp = mecha_dict.get_mecha_hp(mecha_id);
+    //         if mecha_hp == 0 {
+    //             dead_mechas += 1;
+    //         }
+    //         idx += 1;
+    //     };
+    //     dead_mechas == mechas_by_player.len()
+    // }
 
     #[view]
     fn get_game(id_game: u128) -> Game {
@@ -89,28 +135,42 @@ mod MechaStarkContract {
         ref mecha_dict: MechaDict,
         ref mecha_static_data: MechaStaticData
     ) -> bool {
+        
+        // el mecha atacante esta vivo
+        if mecha_dict.get_mecha_hp(action.id_mecha) == 0 {
+            return false;
+        }
+
         match action.first_action {
             TypeAction::Movement(()) => {
-                if !action.validate_movement(player, ref mecha_dict, ref mecha_static_data) {
-                    return false;
+                if !action.movement.has_default_value() {
+                    if !action.validate_movement(player, ref mecha_dict, ref mecha_static_data) {
+                        return false;
+                    }
+                    mecha_dict.update_mecha_position(action.id_mecha, action.movement);
                 }
-                mecha_dict.update_mecha_position(action.id_mecha, action.movement);
 
-                if !action.validate_attack(player, ref mecha_dict, ref mecha_static_data) {
-                    return false;
+                if action.attack.has_default_value() {
+                    if !action.validate_attack(player, ref mecha_dict, ref mecha_static_data) {
+                        return false;
+                    }
+                    mecha_dict.update_mecha_hp(action.id_mecha, action.attack, ref mecha_static_data);
                 }
-                mecha_dict.update_mecha_hp(action.id_mecha, action.attack, ref mecha_static_data);
             },
             TypeAction::Attack(()) => {
-                if !action.validate_attack(player, ref mecha_dict, ref mecha_static_data) {
-                    return false;
+                if action.attack.has_default_value() {
+                    if !action.validate_attack(player, ref mecha_dict, ref mecha_static_data) {
+                        return false;
+                    }
+                    mecha_dict.update_mecha_hp(action.id_mecha, action.attack, ref mecha_static_data);
                 }
-                mecha_dict.update_mecha_hp(action.id_mecha, action.attack, ref mecha_static_data);
 
-                if !action.validate_movement(player, ref mecha_dict, ref mecha_static_data) {
-                    return false;
+                if !action.movement.has_default_value() {
+                    if !action.validate_movement(player, ref mecha_dict, ref mecha_static_data) {
+                        return false;
+                    }
+                    mecha_dict.update_mecha_position(action.id_mecha, action.movement);
                 }
-                mecha_dict.update_mecha_position(action.id_mecha, action.movement);
             },
         }
         return true;
