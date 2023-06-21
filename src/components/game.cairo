@@ -17,7 +17,7 @@ struct MechaAttributes {
     hp: u128,
     attack: u128,
     armor: u128,
-    mov: u128,
+    movement: u128,
     attack_shoot_distance: u128,
     attack_meele_distance: u128,
 } 
@@ -40,7 +40,7 @@ impl MechaAttributesImpl of MechaAttributesTrait {
             hp: 0,
             attack: 0,
             armor: 0,
-            mov: 0,
+            movement: 0,
             attack_shoot_distance: 0,
             attack_meele_distance: 0,
         }
