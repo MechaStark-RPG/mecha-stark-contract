@@ -3,7 +3,9 @@ use starknet::ContractAddress;
 
 use mecha_stark::components::game::{MechaAttributes, MechaAttributesTrait};
 use mecha_stark::components::game_state::{MechaState, MechaStateTrait};
-use mecha_stark::components::mecha_data_helper::{MechaDict, MechaDictTrait, MechaStaticData, MechaStaticDataTrait};
+use mecha_stark::components::mecha_data_helper::{
+    MechaDict, MechaDictTrait, MechaStaticData, MechaStaticDataTrait
+};
 use mecha_stark::components::position::{Position, PositionTrait};
 use mecha_stark::utils::constants::Constants;
 use mecha_stark::utils::serde::{SpanSerde};
@@ -24,12 +26,27 @@ struct Action {
 }
 
 trait ActionTrait {
-    fn validate_attack(self: @Action, player: ContractAddress, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool;
-    fn validate_movement(self: @Action, player: ContractAddress, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool; 
+    fn validate_attack(
+        self: @Action,
+        player: ContractAddress,
+        ref mecha_dict: MechaDict,
+        ref mecha_static_data: MechaStaticData
+    ) -> bool;
+    fn validate_movement(
+        self: @Action,
+        player: ContractAddress,
+        ref mecha_dict: MechaDict,
+        ref mecha_static_data: MechaStaticData
+    ) -> bool;
 }
 
 impl ActionTraitImpl of ActionTrait {
-    fn validate_attack(self: @Action, player: ContractAddress,ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool {
+    fn validate_attack(
+        self: @Action,
+        player: ContractAddress,
+        ref mecha_dict: MechaDict,
+        ref mecha_static_data: MechaStaticData
+    ) -> bool {
         if !is_valid_position(*self.attack) {
             return false;
         }
@@ -38,15 +55,22 @@ impl ActionTraitImpl of ActionTrait {
             return false;
         }
 
-        let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(*self.id_mecha); 
-        let mecha_distance = mecha_dict.get_position_by_mecha_id(*self.id_mecha).distance(*self.attack);
+        let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(*self.id_mecha);
+        let mecha_distance = mecha_dict
+            .get_position_by_mecha_id(*self.id_mecha)
+            .distance(*self.attack);
         if mecha_distance > mecha_attributes.attack_shoot_distance {
             return false;
         }
         true
     }
 
-    fn validate_movement(self: @Action, player: ContractAddress, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool {
+    fn validate_movement(
+        self: @Action,
+        player: ContractAddress,
+        ref mecha_dict: MechaDict,
+        ref mecha_static_data: MechaStaticData
+    ) -> bool {
         if !is_valid_position(*self.movement) {
             return false;
         }
@@ -55,8 +79,10 @@ impl ActionTraitImpl of ActionTrait {
             return false;
         }
 
-        let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(*self.id_mecha); 
-        let mecha_distance = mecha_dict.get_position_by_mecha_id(*self.id_mecha).distance(*self.movement);
+        let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(*self.id_mecha);
+        let mecha_distance = mecha_dict
+            .get_position_by_mecha_id(*self.id_mecha)
+            .distance(*self.movement);
         if mecha_distance > mecha_attributes.movement {
             return false;
         }

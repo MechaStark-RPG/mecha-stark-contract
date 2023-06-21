@@ -7,8 +7,10 @@ mod tests {
     use traits::TryInto;
     use option::OptionTrait;
     use starknet::class_hash::Felt252TryIntoClassHash;
-    
-    use mecha_stark::game::game::{MechaStarkContract, IMechaStarkContractDispatcher, IMechaStarkContractDispatcherTrait};
+
+    use mecha_stark::game::game::{
+        MechaStarkContract, IMechaStarkContractDispatcher, IMechaStarkContractDispatcherTrait
+    };
     use mecha_stark::game::entities::{Action, Game, Position};
     use mecha_stark::game::storage::{GameStorageAccess};
     use mecha_stark::game::serde::{SpanSerde};
@@ -20,10 +22,10 @@ mod tests {
         calldata.append(100);
         let (contract_address, _) = deploy_syscall(
             MechaStarkContract::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
-        ).unwrap();
+        )
+            .unwrap();
 
         let contract0 = IMechaStarkContractDispatcher { contract_address };
-
 
         let turn_id = 1;
         let current_player_turn = starknet::contract_address_const::<10>();
@@ -47,13 +49,13 @@ mod tests {
             players: players.span()
         };
 
-        contract0.create_game(1, game); 
-        
+        contract0.create_game(1, game);
+
         let result = contract0.get_game(1);
         assert(result.turn_id == 1, 'error test legacy map ');
         assert(result.current_player_turn == current_player_turn, 'error test legacy map ');
         // assert(result.winner == winner, 'error test legacy map ');
         assert(result.map_id == map_id, 'error test legacy map ');
-        // assert(result. == , 'error test legacy map ');
+    // assert(result. == , 'error test legacy map ');
     }
 }

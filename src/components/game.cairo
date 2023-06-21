@@ -16,7 +16,7 @@ struct MechaAttributes {
     movement: u128,
     attack_shoot_distance: u128,
     attack_meele_distance: u128,
-} 
+}
 
 #[derive(Copy, Drop, Serde)]
 struct Map {
@@ -31,7 +31,7 @@ trait MechaAttributesTrait {
 
 impl MechaAttributesImpl of MechaAttributesTrait {
     fn new() -> MechaAttributes {
-        MechaAttributes { 
+        MechaAttributes {
             id: 0,
             hp: 0,
             attack: 0,

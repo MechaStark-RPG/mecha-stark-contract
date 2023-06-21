@@ -11,7 +11,6 @@ trait IMechaStarkContract {
 
 #[contract]
 mod MechaStarkContract {
-    
     use array::{ArrayTrait, SpanTrait};
     use starknet::ContractAddress;
 
@@ -19,10 +18,12 @@ mod MechaStarkContract {
     use mecha_stark::components::game::{Game, MechaAttributes};
     use mecha_stark::components::game_state::{GameState, PlayerState, MechaState};
     use mecha_stark::components::position::{Position};
-    use mecha_stark::components::mecha_data_helper::{MechaDict, MechaDictTrait, MechaStaticData, MechaStaticDataTrait};
+    use mecha_stark::components::mecha_data_helper::{
+        MechaDict, MechaDictTrait, MechaStaticData, MechaStaticDataTrait
+    };
     use mecha_stark::utils::storage::{GameStorageAccess};
     use mecha_stark::utils::serde::{SpanSerde};
-    
+
     use super::IMechaStarkContract;
 
     struct Storage {
@@ -40,7 +41,7 @@ mod MechaStarkContract {
     }
 
     #[external]
-    fn validate_game(game_state: GameState, turns: Array<Turn>) {        
+    fn validate_game(game_state: GameState, turns: Array<Turn>) {
         let mut mecha_dict = load_initial_state(game_state);
         let mut mecha_static_data = load_static_data(game_state);
 
@@ -52,14 +53,16 @@ mod MechaStarkContract {
             let mut idy = 0;
             let mut actions: Span<Action> = *turns.at(idx).actions;
             let player = *turns.at(idx).player;
-            
+
             loop {
                 if idy == actions.len() {
                     break ();
                 }
 
                 let action = *actions.at(idx);
-                if !validate_and_execute_action(player, action, ref mecha_dict, ref mecha_static_data) {
+                if !validate_and_execute_action(
+                    player, action, ref mecha_dict, ref mecha_static_data
+                ) {
                     // HIZO TRAMPA
                     break ();
                 }
@@ -80,14 +83,19 @@ mod MechaStarkContract {
         _game::read(id_game)
     }
 
-    fn validate_and_execute_action(player: ContractAddress, action: Action, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool {
+    fn validate_and_execute_action(
+        player: ContractAddress,
+        action: Action,
+        ref mecha_dict: MechaDict,
+        ref mecha_static_data: MechaStaticData
+    ) -> bool {
         match action.first_action {
             TypeAction::Movement(()) => {
                 if !action.validate_movement(player, ref mecha_dict, ref mecha_static_data) {
                     return false;
                 }
                 mecha_dict.update_mecha_position(action.id_mecha, action.movement);
-                
+
                 if !action.validate_attack(player, ref mecha_dict, ref mecha_static_data) {
                     return false;
                 }
@@ -98,7 +106,7 @@ mod MechaStarkContract {
                     return false;
                 }
                 mecha_dict.update_mecha_hp(action.id_mecha, action.attack, ref mecha_static_data);
-                
+
                 if !action.validate_movement(player, ref mecha_dict, ref mecha_static_data) {
                     return false;
                 }
@@ -113,12 +121,14 @@ mod MechaStarkContract {
         _load_initial_state(game_state.players, 0, mecha_dict)
     }
 
-    fn _load_initial_state(players: Span<PlayerState>, idx: usize, mut mecha_dict: MechaDict) -> MechaDict {
+    fn _load_initial_state(
+        players: Span<PlayerState>, idx: usize, mut mecha_dict: MechaDict
+    ) -> MechaDict {
         if players.len() == idx {
             return mecha_dict;
         }
         let owner = *players.at(idx).owner;
-        
+
         let mut idy = 0;
         loop {
             let states: Span<MechaState> = *players.at(idx).mechas;
@@ -138,12 +148,17 @@ mod MechaStarkContract {
         _load_static_data(game_state.players, 0, mecha_data, 1)
     }
 
-    fn _load_static_data(players: Span<PlayerState>, idx: usize, mut mecha_data: MechaStaticData, mut mecha_spoof_id: u128) -> MechaStaticData {
+    fn _load_static_data(
+        players: Span<PlayerState>,
+        idx: usize,
+        mut mecha_data: MechaStaticData,
+        mut mecha_spoof_id: u128
+    ) -> MechaStaticData {
         if players.len() == idx {
             return mecha_data;
         }
         let owner = *players.at(idx).owner;
-        
+
         let mut idy = 0;
         loop {
             let states: Span<MechaState> = *players.at(idx).mechas;

@@ -28,10 +28,6 @@ trait MechaStateTrait {
 
 impl MechaStateImpl of MechaStateTrait {
     fn new() -> MechaState {
-        MechaState { 
-            id: 0,
-            hp: 0,
-            position: Position { x: 0, y: 0 }
-        }
+        MechaState { id: 0, hp: 0, position: Position { x: 0, y: 0 } }
     }
 }
