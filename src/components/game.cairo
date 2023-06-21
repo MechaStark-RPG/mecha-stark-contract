@@ -1,14 +1,10 @@
 use starknet::ContractAddress;
-use mecha_stark::serde::{SpanSerde};
 
 #[derive(Copy, Drop, Serde)]
 struct Game {
-    turn_id: u128,
-    current_player_turn: ContractAddress,
+    id: u128,
+    bet: u128,
     winner: ContractAddress,
-    map_id: u128,
-    mechas_ids: Span<felt252>,
-    players: Span<felt252>,
 }
 
 #[derive(Copy, Drop, Serde)]

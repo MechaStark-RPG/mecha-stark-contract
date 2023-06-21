@@ -1,38 +1,37 @@
-use mecha_stark::components::turn::{Action, Turn};
-use mecha_stark::components::game::{Game, MechaAttributes};
-use mecha_stark::components::game_state::{GameState, PlayerState, MechaState};
-use mecha_stark::components::position::{Position};
+use mecha_stark::components::turn::{Turn};
+use mecha_stark::components::game::{Game};
+use mecha_stark::components::game_state::{GameState};
 
 #[abi]
 trait IMechaStarkContract {
     fn create_game(id_game: u128, new_game: Game);
-    fn validate_game(actions: Array<Action>);
+    fn validate_game(game_state: GameState, turns: Array<Turn>);
     fn get_game(id_game: u128) -> Game;
 }
 
 #[contract]
 mod MechaStarkContract {
     
-    use array::ArrayTrait;
-    use dict::Felt252DictTrait;
-    use option::OptionTrait;
-    use traits::{Into, TryInto};
-    use array::SpanTrait;
-    use integer::{u128_sqrt, U64IntoFelt252, Felt252TryIntoU128};
-
+    use array::{ArrayTrait, SpanTrait};
     use starknet::ContractAddress;
 
-    use mecha_stark::components::turn::{Action, TypeAction, Turn};
+    use mecha_stark::components::turn::{Action, ActionTrait, TypeAction, Turn};
     use mecha_stark::components::game::{Game, MechaAttributes};
     use mecha_stark::components::game_state::{GameState, PlayerState, MechaState};
     use mecha_stark::components::position::{Position};
     use mecha_stark::components::mecha_data_helper::{MechaDict, MechaDictTrait, MechaStaticData, MechaStaticDataTrait};
+    use mecha_stark::utils::storage::{GameStorageAccess};
+    use mecha_stark::utils::serde::{SpanSerde};
+    
     use super::IMechaStarkContract;
-    use mecha_stark::storage::{GameStorageAccess};
-    use mecha_stark::serde::{SpanSerde};
 
     struct Storage {
+        _count_games: u128,
+        _owner: ContractAddress,
+        _token: ContractAddress,
         _game: LegacyMap::<u128, Game>,
+        _players: LegacyMap::<(u128, ContractAddress), ContractAddress>,
+        _mechas_ids: LegacyMap::<(u128, ContractAddress), ContractAddress>,
     }
 
     #[external]
@@ -40,11 +39,6 @@ mod MechaStarkContract {
         _game::write(id_game, new_game);
     }
 
-    // HARDCODED FOR NOW
-    const MAP_WIDTH: u128 = 30;
-    const MAP_HEIGHT: u128 = 14;
-    
-    // crear un array de actions con el botardo
     #[external]
     fn validate_game(game_state: GameState, turns: Array<Turn>) {        
         let mut mecha_dict = load_initial_state(game_state);
@@ -75,122 +69,43 @@ mod MechaStarkContract {
                 //     // Guardar el estado final
                 // }
 
-                // valido si termino el juego
                 idy += 1;
             };
             idx += 1;
         }
     }
 
-    // fn is_game_finished(owner: ContractAddress, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool {
-    //     let id_mechas_by_owner = mecha_static_data.get_mechas_ids_by_owner(owner);
-    //     let mut idx = 0;
-    //     let mut mechas_dead = 0;
-    //     loop {
-    //         if idx == id_mechas_by_owner.len() {
-    //             break ();
-    //         }
-    //         let id_mecha = *id_mechas_by_owner.at(idx);
-    //         if mecha_dict.get_mecha_hp(id_mecha) == 0 {
-    //             mechas_dead += 1;
-    //         }
-    //         idx += 1;
-    //     };
-    //     mechas_dead == id_mechas_by_owner.len()
-    // }
+    #[view]
+    fn get_game(id_game: u128) -> Game {
+        _game::read(id_game)
+    }
 
     fn validate_and_execute_action(player: ContractAddress, action: Action, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool {
         match action.first_action {
             TypeAction::Movement(()) => {
-                if !validate_movement(player, action, ref mecha_dict, ref mecha_static_data) {
+                if !action.validate_movement(player, ref mecha_dict, ref mecha_static_data) {
                     return false;
                 }
-                update_mecha_position(action.id_mecha, action.movement, ref mecha_dict);
+                mecha_dict.update_mecha_position(action.id_mecha, action.movement);
                 
-                if !validate_attack(player, action, ref mecha_dict, ref mecha_static_data) {
+                if !action.validate_attack(player, ref mecha_dict, ref mecha_static_data) {
                     return false;
                 }
-                update_mecha_hp(action, ref mecha_dict, ref mecha_static_data);
+                mecha_dict.update_mecha_hp(action.id_mecha, action.attack, ref mecha_static_data);
             },
             TypeAction::Attack(()) => {
-                if !validate_attack(player, action, ref mecha_dict, ref mecha_static_data) {
+                if !action.validate_attack(player, ref mecha_dict, ref mecha_static_data) {
                     return false;
                 }
-                update_mecha_hp(action, ref mecha_dict, ref mecha_static_data);
+                mecha_dict.update_mecha_hp(action.id_mecha, action.attack, ref mecha_static_data);
                 
-                if !validate_movement(player, action, ref mecha_dict, ref mecha_static_data) {
+                if !action.validate_movement(player, ref mecha_dict, ref mecha_static_data) {
                     return false;
                 }
-                update_mecha_position(action.id_mecha, action.movement, ref mecha_dict);
+                mecha_dict.update_mecha_position(action.id_mecha, action.movement);
             },
         }
         return true;
-    }
-
-    fn validate_movement(player: ContractAddress, action: Action, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool {
-        if !is_valid_position(action.movement) {
-            return false;
-        }
-
-        if mecha_dict.get_mecha_id_by_position(action.movement.into()) == 0 {
-            return false;
-        }
-
-        let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(action.id_mecha); 
-        let mecha_distance = distance(
-            mecha_dict.get_position_by_mecha_id(action.id_mecha), 
-            action.movement
-        );
-        if mecha_distance > mecha_attributes.movement {
-            return false;
-        }
-
-        true
-    }
-
-    fn validate_attack(player: ContractAddress, action: Action, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) -> bool {
-        if !is_valid_position(action.attack) {
-            return false;
-        }
-
-        if mecha_dict.get_mecha_id_by_position(action.attack.into()) == 0 {
-            return false;
-        }
-
-        let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(action.id_mecha); 
-        let mecha_distance = distance(
-            mecha_dict.get_position_by_mecha_id(action.id_mecha), 
-            action.attack
-        );
-        if mecha_distance > mecha_attributes.attack_shoot_distance {
-            return false;
-        }
-        true
-    }
-
-    fn update_mecha_position(id_mecha: u128, movement: Position, ref mecha_dict: MechaDict) {
-        mecha_dict.update_mecha_position(id_mecha, movement);
-    }
-
-    fn update_mecha_hp(action: Action, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData) {
-        let (_, mecha_attack) = mecha_static_data.get_mecha_data_by_mecha_id(action.id_mecha);
-        let mecha_received_id = mecha_dict.get_mecha_id_by_position(action.attack);
-        if mecha_received_id > 0 {
-            let mecha_received_hp = mecha_dict.get_mecha_hp(mecha_received_id);
-            // fijarse que no se pase a negativo
-            mecha_dict.update_mecha_hp(mecha_received_id, mecha_received_hp - mecha_attack.attack);
-        }
-    }
-
-    fn is_valid_position(position: Position) -> bool {
-        position.x > MAP_HEIGHT | position.y > MAP_WIDTH
-    }
-
-    fn distance(initial: Position, target: Position) -> u128 {
-        let x = initial.x - target.x;
-        let y = initial.y - target.y;
-        let ret: felt252 = u128_sqrt(x * x + y * y).into();
-        ret.try_into().unwrap()
     }
 
     fn load_initial_state(game_state: GameState) -> MechaDict {
@@ -212,7 +127,7 @@ mod MechaStarkContract {
             }
             let mecha_state = *states.at(idy);
             mecha_dict.update_mecha_position(mecha_state.id, mecha_state.position);
-            mecha_dict.update_mecha_hp(mecha_state.id, mecha_state.hp);
+            mecha_dict.set_mecha_hp(mecha_state.id, mecha_state.hp);
             idy += 1;
         };
         _load_initial_state(players, idx + 1, mecha_dict)
@@ -254,10 +169,5 @@ mod MechaStarkContract {
             attack_shoot_distance: 4,
             attack_meele_distance: 2,
         }
-    }
-
-    #[view]
-    fn get_game(id_game: u128) -> Game {
-        _game::read(id_game)
     }
 }

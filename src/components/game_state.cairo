@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
-use mecha_stark::components::position::{Position};
-use mecha_stark::serde::{SpanSerde};
 
+use mecha_stark::components::position::{Position};
+use mecha_stark::utils::serde::{SpanSerde};
 
 #[derive(Copy, Drop, Serde)]
 struct GameState {

@@ -1,13 +1,11 @@
-use mecha_stark::components::position::{Position, IntoU128ToPositionImpl, IntoPositionToU128Impl, IntoFelt252ToPositionImpl, IntoPositionToFelt252Impl, PositionPartialEq };
+use array::ArrayTrait;
+use dict::Felt252DictTrait;
+use traits::{Into, TryInto};
+use starknet::ContractAddress;
+
 use mecha_stark::components::game::{MechaAttributes, MechaAttributesTrait};
 use mecha_stark::components::game_state::{MechaState, MechaStateTrait};
-use starknet::ContractAddress;
-use array::ArrayTrait;
-use starknet::Felt252TryIntoContractAddress;
-use dict::Felt252DictTrait;
-use integer::U128IntoFelt252;
-use option::OptionTrait;
-use traits::{Into, TryInto};
+use mecha_stark::components::position::{Position, IntoU128ToPositionImpl, IntoPositionToU128Impl, IntoFelt252ToPositionImpl, IntoPositionToFelt252Impl, PositionPartialEq};
 
 #[derive(Drop)]
 struct MechaStaticData {
@@ -28,7 +26,8 @@ trait MechaDictTrait {
     fn get_position_by_mecha_id(ref self: MechaDict, mecha_id: u128) -> Position;
     fn get_mecha_hp(ref self: MechaDict, mecha_id: u128) -> u128;
     fn update_mecha_position(ref self: MechaDict, mecha_id: u128, position: Position);
-    fn update_mecha_hp(ref self: MechaDict, mecha_id: u128, hp: u128);
+    fn update_mecha_hp(ref self: MechaDict, id_mecha: u128, position_attack: Position, ref mecha_static_data: MechaStaticData);
+    fn set_mecha_hp(ref self: MechaDict, id_mecha: u128, hp: u128);
 }
 
 impl MechaDictTraitImpl of MechaDictTrait {
@@ -68,8 +67,18 @@ impl MechaDictTraitImpl of MechaDictTrait {
         self.positions_for_mechas.insert(mecha_id.into(), position.into());
     }
 
-    fn update_mecha_hp(ref self: MechaDict, mecha_id: u128, hp: u128) {
-        self.hp.insert(mecha_id.into(), hp);
+    fn set_mecha_hp(ref self: MechaDict, id_mecha: u128, hp: u128) {
+        self.hp.insert(id_mecha.into(), hp);
+    }
+
+    fn update_mecha_hp(ref self: MechaDict, id_mecha: u128, position_attack: Position, ref mecha_static_data: MechaStaticData) {
+        let (_, mecha_attack) = mecha_static_data.get_mecha_data_by_mecha_id(id_mecha);
+        let mecha_received_id = self.get_mecha_id_by_position(position_attack);
+        if mecha_received_id > 0 {
+            let mecha_received_hp = self.get_mecha_hp(mecha_received_id);
+            // fijarse que no se pase a negativo
+            self.hp.insert(mecha_received_id.into(), mecha_received_hp - mecha_attack.attack);
+        }
     }
 }
 

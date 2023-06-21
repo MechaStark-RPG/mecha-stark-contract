@@ -10,7 +10,7 @@ use starknet::{
 use integer::{Felt252TryIntoU128, U128IntoFelt252};
 
 use mecha_stark::components::game::{Game};
-use mecha_stark::serde::{SpanSerde};
+use mecha_stark::utils::serde::{SpanSerde};
 
 impl ContractAddressSpanStorageAccess of StorageAccess<Span<ContractAddress>> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Span<ContractAddress>> {
@@ -218,69 +218,39 @@ impl Felt252SpanStorageAccess of StorageAccess<Span<felt252>> {
 
 impl GameStorageAccess of StorageAccess<Game> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Game> {
-        let turn_id_base = storage_base_address_from_felt252(
+        let id_base = storage_base_address_from_felt252(
             storage_address_from_base_and_offset(base, 0_u8).into()
         );
-        let turn_id = StorageAccess::read(address_domain, turn_id_base)?;
+        let id = StorageAccess::read(address_domain, id_base)?;
 
-        let current_player_turn_base = storage_base_address_from_felt252(
+        let bet_base = storage_base_address_from_felt252(
             storage_address_from_base_and_offset(base, 1_u8).into()
         );
-        let current_player_turn = StorageAccess::read(address_domain, current_player_turn_base)?;
+        let bet = StorageAccess::read(address_domain, bet_base)?;
 
         let winner_base = storage_base_address_from_felt252(
             storage_address_from_base_and_offset(base, 2_u8).into()
         );
         let winner = StorageAccess::read(address_domain, winner_base)?;
 
-        let map_id_base = storage_base_address_from_felt252(
-            storage_address_from_base_and_offset(base, 3_u8).into()
-        );
-        let map_id = StorageAccess::read(address_domain, map_id_base)?;
-
-        let mechas_ids_base = storage_base_address_from_felt252(
-            storage_address_from_base_and_offset(base, 4_u8).into()
-        );
-        let mechas_ids = StorageAccess::read(address_domain, mechas_ids_base)?;
-
-        let players_base = storage_base_address_from_felt252(
-            storage_address_from_base_and_offset(base, 5_u8).into()
-        );
-        let players = StorageAccess::read(address_domain, map_id_base)?;
-
-        Result::Ok(Game { turn_id, current_player_turn, winner, map_id, mechas_ids, players })
+        Result::Ok(Game { id, bet, winner })
     }
 
     fn write(address_domain: u32, base: StorageBaseAddress, mut value: Game) -> SyscallResult<()> {
-        let turn_id_base = storage_base_address_from_felt252(
+        let id_base = storage_base_address_from_felt252(
             storage_address_from_base_and_offset(base, 0_u8).into()
         );
-        StorageAccess::write(address_domain, turn_id_base, value.turn_id)?;
+        StorageAccess::write(address_domain, id_base, value.id)?;
 
-        let current_player_turn_base = storage_base_address_from_felt252(
+        let bet_base = storage_base_address_from_felt252(
             storage_address_from_base_and_offset(base, 1_u8).into()
         );
-        StorageAccess::write(address_domain, current_player_turn_base, value.current_player_turn)?;
+        StorageAccess::write(address_domain, bet_base, value.bet)?;
 
         let winner_base = storage_base_address_from_felt252(
             storage_address_from_base_and_offset(base, 3_u8).into()
         );
         StorageAccess::write(address_domain, winner_base, value.winner)?;
-
-        let map_id_base = storage_base_address_from_felt252(
-            storage_address_from_base_and_offset(base, 4_u8).into()
-        );
-        StorageAccess::write(address_domain, map_id_base, value.map_id)?;
-
-        let mechas_ids_base = storage_base_address_from_felt252(
-            storage_address_from_base_and_offset(base, 5_u8).into()
-        );
-        StorageAccess::write(address_domain, mechas_ids_base, value.mechas_ids)?;
-
-        let players_base = storage_base_address_from_felt252(
-            storage_address_from_base_and_offset(base, 6_u8).into()
-        );
-        StorageAccess::write(address_domain, players_base, value.players);
 
         SyscallResult::Ok(())
     }

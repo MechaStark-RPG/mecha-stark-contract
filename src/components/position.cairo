@@ -1,13 +1,8 @@
-use mecha_stark::components::game::{Map};
 use integer::{U128IntoFelt252, Felt252TryIntoU128};
-use traits::{Into, TryInto};
 use option::OptionTrait;
+use traits::{Into, TryInto};
 
-const BOARD_WIDTH: u128 = 30;
-const BOARD_HEIGHT: u128 = 14;
-
-const BOARD_WIDTH_FELT: felt252 = 30;
-const BOARD_HEIGHT_FELT: felt252 = 14;
+use mecha_stark::utils::constants::Constants;
 
 #[derive(Copy, Drop, Serde, ParcialEq)]
 struct Position {
@@ -16,12 +11,15 @@ struct Position {
 }
 
 trait PositionTrait {
-    fn validate(self: @Position, map: Map) -> bool;
+    fn distance(self: @Position, target: Position) -> u128;
 }
 
 impl PositionTraitImpl of PositionTrait {
-    fn validate(self: @Position, map: Map) -> bool {
-        *self.x < map.width & *self.y < map.height
+    fn distance(self: @Position, target: Position) -> u128 {
+        let x = *self.x - target.x;
+        let y = *self.y - target.y;
+        let ret: felt252 = u128_sqrt(x * x + y * y).into();
+        ret.try_into().unwrap()
     }
 }
 
@@ -38,29 +36,28 @@ impl PositionPartialEq of PartialEq<Position> {
 
 impl IntoU128ToPositionImpl of Into<Position, u128> {
     fn into(self: Position) -> u128 {
-        self.y * BOARD_WIDTH + self.x
+        self.y * Constants::BOARD_WIDTH + self.x
     }
 }
 
 impl IntoPositionToU128Impl of Into<u128, Position> {
     fn into(self: u128) -> Position {
-        let y = self / BOARD_WIDTH;
-        let x = self % BOARD_WIDTH;
+        let y = self / Constants::BOARD_WIDTH;
+        let x = self % Constants::BOARD_WIDTH;
         Position { x, y }
     }
 }
 
 impl IntoFelt252ToPositionImpl of Into<Position, felt252> {
     fn into(self: Position) -> felt252 {
-        self.y.into() * BOARD_WIDTH_FELT + self.x.into()
+        let self_u128: u128 = self.into();
+        self_u128.into()
     }
 }
 
 impl IntoPositionToFelt252Impl of Into<felt252, Position> {
     fn into(self: felt252) -> Position {
         let self_u128: u128 = self.try_into().unwrap();
-        let y: u128 = (self_u128 / BOARD_WIDTH);
-        let x: u128 = (self_u128 % BOARD_WIDTH);
-        Position { x, y }
+        self.into()
     }
 }
