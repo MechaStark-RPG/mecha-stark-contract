@@ -11,6 +11,7 @@ use mecha_stark::components::position::{
 };
 use mecha_stark::utils::constants::Constants;
 
+
 #[derive(Drop)]
 struct MechaStaticData {
     owners: Array<ContractAddress>,
@@ -120,8 +121,21 @@ impl MechaStaticDataImpl of MechaStaticDataTrait {
     }
 
     fn get_mechas_ids_by_owner(self: @MechaStaticData, owner: ContractAddress) -> Array<u128> {
-        let mechas: Array<u128> = ArrayTrait::new();
-        _get_mechas_by_owner(self, owner, 0, mechas)
+        let mut mechas: Array<u128> = ArrayTrait::new();
+        // let mut idx = 0;
+        // loop {
+        //     if idx == self.owners.len() {
+        //         break ();
+        //     }
+
+        //     let mecha_owner = *self.owners.at(idx);
+        //     if mecha_owner == owner {
+        //         let attribute = *self.attributes.at(idx);
+        //         mechas.append(attribute.id);
+        //     }
+        //     idx += 1;
+        // };
+        mechas
     }
 
     fn insert_mecha_data(
@@ -130,21 +144,6 @@ impl MechaStaticDataImpl of MechaStaticDataTrait {
         self.owners.append(owner);
         self.attributes.append(attributes);
     }
-}
-
-fn _get_mechas_by_owner(
-    mecha_data: @MechaStaticData, owner: ContractAddress, idx: usize, mut mechas: Array<u128>
-) -> Array<u128> {
-    if idx == mecha_data.owners.len() {
-        return mechas;
-    }
-
-    let mecha_owner = *mecha_data.owners.at(idx);
-    if mecha_owner == owner {
-        let attribute = *mecha_data.attributes.at(idx);
-        mechas.append(attribute.id);
-    }
-    _get_mechas_by_owner(mecha_data, owner, idx + 1, mechas)
 }
 
 fn _get_mecha_data_by_mecha_id(

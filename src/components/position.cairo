@@ -20,8 +20,9 @@ impl PositionTraitImpl of PositionTrait {
     fn distance(self: @Position, target: Position) -> u128 {
         let x = *self.x - target.x;
         let y = *self.y - target.y;
-        let ret: felt252 = u128_sqrt(x * x + y * y).into();
-        ret.try_into().unwrap()
+        // let ret: felt252 = u128_sqrt(x * x + y * y).into();
+        // ret.try_into().unwrap()
+        1
     }
     fn has_default_value(self: @Position) -> bool {
         *self.x == 100 & *self.y == 100  

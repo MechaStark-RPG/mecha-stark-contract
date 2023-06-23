@@ -218,10 +218,10 @@ impl Felt252SpanStorageAccess of StorageAccess<Span<felt252>> {
 
 impl GameStorageAccess of StorageAccess<Game> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Game> {
-        let id_base = storage_base_address_from_felt252(
+        let size_base = storage_base_address_from_felt252(
             storage_address_from_base_and_offset(base, 0_u8).into()
         );
-        let id = StorageAccess::read(address_domain, id_base)?;
+        let size = StorageAccess::read(address_domain, size_base)?;
 
         let bet_base = storage_base_address_from_felt252(
             storage_address_from_base_and_offset(base, 1_u8).into()
@@ -233,14 +233,34 @@ impl GameStorageAccess of StorageAccess<Game> {
         );
         let winner = StorageAccess::read(address_domain, winner_base)?;
 
-        Result::Ok(Game { id, bet, winner })
+        let player_1_base = storage_base_address_from_felt252(
+            storage_address_from_base_and_offset(base, 3_u8).into()
+        );
+        let player_1 = StorageAccess::read(address_domain, player_1_base)?;
+
+        let player_2_base = storage_base_address_from_felt252(
+            storage_address_from_base_and_offset(base, 4_u8).into()
+        );
+        let player_2 = StorageAccess::read(address_domain, player_2_base)?;
+
+        let mechas_player_1_base = storage_base_address_from_felt252(
+            storage_address_from_base_and_offset(base, 5_u8).into()
+        );
+        let mechas_player_1 = StorageAccess::read(address_domain, mechas_player_1_base)?;
+
+        let mechas_player_2_base = storage_base_address_from_felt252(
+            storage_address_from_base_and_offset(base, 11_u8).into()
+        );
+        let mechas_player_2 = StorageAccess::read(address_domain, mechas_player_2_base)?;
+
+        Result::Ok(Game { size, bet, winner, player_1, player_2, mechas_player_1, mechas_player_2 })
     }
 
     fn write(address_domain: u32, base: StorageBaseAddress, mut value: Game) -> SyscallResult<()> {
-        let id_base = storage_base_address_from_felt252(
+        let size_base = storage_base_address_from_felt252(
             storage_address_from_base_and_offset(base, 0_u8).into()
         );
-        StorageAccess::write(address_domain, id_base, value.id)?;
+        StorageAccess::write(address_domain, size_base, value.size)?;
 
         let bet_base = storage_base_address_from_felt252(
             storage_address_from_base_and_offset(base, 1_u8).into()
@@ -248,9 +268,29 @@ impl GameStorageAccess of StorageAccess<Game> {
         StorageAccess::write(address_domain, bet_base, value.bet)?;
 
         let winner_base = storage_base_address_from_felt252(
-            storage_address_from_base_and_offset(base, 3_u8).into()
+            storage_address_from_base_and_offset(base, 2_u8).into()
         );
         StorageAccess::write(address_domain, winner_base, value.winner)?;
+
+        let player_1_base = storage_base_address_from_felt252(
+            storage_address_from_base_and_offset(base, 3_u8).into()
+        );
+        StorageAccess::write(address_domain, player_1_base, value.player_1)?;
+
+        let player_2_base = storage_base_address_from_felt252(
+            storage_address_from_base_and_offset(base, 4_u8).into()
+        );
+        StorageAccess::write(address_domain, player_2_base, value.player_2)?;
+
+        let mechas_player_1_base = storage_base_address_from_felt252(
+            storage_address_from_base_and_offset(base, 5_u8).into()
+        );
+        StorageAccess::write(address_domain, mechas_player_1_base, value.mechas_player_1)?;
+
+        let mechas_player_2_base = storage_base_address_from_felt252(
+            storage_address_from_base_and_offset(base, 11_u8).into()
+        );
+        StorageAccess::write(address_domain, mechas_player_2_base, value.mechas_player_2)?;
 
         SyscallResult::Ok(())
     }

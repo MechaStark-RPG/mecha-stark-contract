@@ -10,7 +10,7 @@ use mecha_stark::components::position::{Position, PositionTrait};
 use mecha_stark::utils::constants::Constants;
 use mecha_stark::utils::serde::{SpanSerde};
 
-#[derive(Drop, Serde)]
+#[derive(Copy, Drop, Serde)]
 struct Turn {
     id_game: u128,
     player: ContractAddress,

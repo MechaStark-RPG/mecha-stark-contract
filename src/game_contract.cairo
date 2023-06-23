@@ -4,15 +4,22 @@ use mecha_stark::components::game_state::{GameState};
 
 #[abi]
 trait IMechaStarkContract {
-    fn create_game(id_game: u128, new_game: Game);
-    fn validate_game(game_state: GameState, turns: Array<Turn>);
+    #[external]
+    fn create_game(mechas_id: Array<felt252>, room_size: u128, bet: u128);
+    #[external]
+    fn join_game(id_game: u128, mechas_id: Array<felt252>);
+    #[view]
+    fn validate_game(game_state: GameState, turns: Array<Turn>) -> bool;
+    #[external]
+    fn finish_game(game_state: GameState, turns: Array<Turn>);
+    #[view]
     fn get_game(id_game: u128) -> Game;
 }
 
 #[contract]
 mod MechaStarkContract {
     use array::{ArrayTrait, SpanTrait};
-    use starknet::ContractAddress;
+    use starknet::{ContractAddress, get_caller_address};
 
     use mecha_stark::components::turn::{Action, ActionTrait, TypeAction, Turn};
     use mecha_stark::components::game::{Game, MechaAttributes};
@@ -30,84 +37,104 @@ mod MechaStarkContract {
         _owner: ContractAddress,
         _token: ContractAddress,
         _count_games: u128,
-        _game: LegacyMap::<u128, Game>,
-        _players: LegacyMap::<(u128, u128), ContractAddress>,
-        _mechas_ids: LegacyMap::<(u128, u128), ContractAddress>,
+        _games: LegacyMap<u128, Game>,
+        // _players: LegacyMap<(u128, felt252), Span<felt252>>,
+        // _mechas_ids: LegacyMap<(u128, u128), ContractAddress>,
     }
 
     #[external]
-    fn create_game(id_game: u128, new_game: Game) {
-        _game::write(id_game, new_game);
+    fn create_game(mechas_id: Array<felt252>, room_size: u128, bet: u128) {
+        // Cuando se crea el juego, se debe pagar el bet
+        // Validar que sean 5 mechas 
+        assert(mechas_id.len() == 5, 'Se deben enviar 5 mechas');
+        // Validar que los mechas sean del mismo owner
+
+        let player_address = get_caller_address();
+        _games::write(_count_games::read(), Game {
+            bet: bet,
+            size: room_size,
+            winner: starknet::contract_address_const::<0>(),
+            player_1: player_address,
+            player_2: starknet::contract_address_const::<0>(),
+            mechas_player_1: mechas_id.span(),
+            mechas_player_2: ArrayTrait::new().span(),
+        });
+
+        _count_games::write(_count_games::read() + 1);
     }
 
     #[external]
-    fn validate_game(game_state: GameState, turns: Array<Turn>) {
-        let mut mecha_dict = load_initial_state(game_state);
-        let mut mecha_static_data = load_static_data(game_state);
+    fn join_game(id_game: u128, mechas_id: Array<felt252>) {
+        // El jugador que se une acepta pagar el bet
+        // Validar que sean 5 mechas 
+        assert(mechas_id.len() == 5, 'Se deben enviar 5 mechas');
+        // Validar que los mechas sean del mismo owner
+        // Si hay espacio en la sala ==> Agregar al jugador
+        // Si completo la sala ==> cambio el estado a iniciar juego
+        
+        let game = _games::read(id_game);
 
-        let mut idx = 0;
-        loop {
-            if idx == turns.len() {
-                break ();
-            }
-            let mut idy = 0;
-            let mut actions: Span<Action> = *turns.at(idx).actions;
-            let player = *turns.at(idx).player;
+        let player_address = get_caller_address();
+        _games::write(id_game, Game {
+            bet: game.bet,
+            size: game.size,
+            winner: game.winner,
+            player_1: game.player_1,
+            player_2: player_address,
+            mechas_player_1: game.mechas_player_1,
+            mechas_player_2: mechas_id.span(),
+        });
+    }
 
-            // Validar que el jugador sea el que le toca
-            
-            loop {
-                if idy == actions.len() {
-                    break ();
-                }
+    #[view]
+    fn validate_game(game_state: GameState, turns: Array<Turn>) -> bool {
+        _validate_game(game_state, turns)
+    }
 
-                let action = *actions.at(idx);
-                if !validate_and_execute_action(
-                    player, action, ref mecha_dict, ref mecha_static_data
-                ) {
-                    // HIZO TRAMPA
-                    break ();
-                }
-                if is_game_finished(
-                    game_state.players, ref mecha_dict, ref mecha_static_data
-                ) { // TERMINO EL JUEGO
-                // Guardar el estado final
-                }
-
-                idy += 1;
-            };
-            idx += 1;
+    #[external]
+    fn finish_game(game_state: GameState, turns: Array<Turn>) {
+        // let winner = validate_game() -> winner
+        if _validate_game(game_state, turns) {
+            // let bet = get_bet_by_game()
+            // transferir el bet al ganador
+            // escribir en el game quien gano
+        } else {
+            panic_with_felt252('Mecha stark - finishing game');
         }
     }
 
-    fn is_game_finished(
-        players: Span<PlayerState>,
-        ref mecha_dict: MechaDict,
-        ref mecha_static_data: MechaStaticData
-    ) -> bool {
-        // let mut idx = 0;
-        // let mut live_players = 0;
-        // loop {
-        //     if idx == players.len() {
-        //         break ();
-        //     }
-        //     if live_players == 2 {
-        //         break ();
-        //     }
-        //     let player = *players.at(idx).owner;
-        //     if !is_player_finished(player, ref mecha_dict, ref mecha_static_data) {
-        //         live_players += 1;
-        //     }
-        //     idx += 1;
-        // };
-        // live_players == 1
-        true
+    #[view]
+    fn get_game(id_game: u128) -> Game {
+        _games::read(id_game)
     }
+
+    // fn is_game_finished(
+    //     players: Span<PlayerState>,
+    //     ref mecha_dict: MechaDict,
+    //     ref mecha_static_data: MechaStaticData
+    // ) -> bool {
+    //     let mut idx = 0;
+    //     let mut live_players = 0;
+    //     loop {
+    //         if idx == players.len() {
+    //             break ();
+    //         }
+    //         if live_players == 2 {
+    //             break ();
+    //         }
+    //         let player = *players.at(idx).owner;
+    //         if !is_player_finished(player, ref mecha_dict, ref mecha_static_data) {
+    //             live_players += 1;
+    //         }
+    //         idx += 1;
+    //     };
+    //     live_players == 1
+    // }
 
     // fn is_player_finished(
     //     player: ContractAddress, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData
     // ) -> bool {
-    //     let  mechas_by_player = mecha_static_data.get_mechas_ids_by_owner(player);
+    //     let mechas_by_player = mecha_static_data.get_mechas_ids_by_owner(player);
     //     let mut idx = 0;
     //     let mut dead_mechas = 0;
     //     loop {
@@ -124,9 +151,48 @@ mod MechaStarkContract {
     //     dead_mechas == mechas_by_player.len()
     // }
 
-    #[view]
-    fn get_game(id_game: u128) -> Game {
-        _game::read(id_game)
+    fn _validate_game(game_state: GameState, turns: Array<Turn>) -> bool {
+        let mut mecha_dict = load_initial_state(game_state);
+        let mut mecha_static_data = load_static_data(game_state);
+
+        let mut valid = true;
+        let mut idx = 0;
+        loop {
+            if idx == turns.len() {
+                break ();
+            }
+            let mut idy = 0;
+            let mut actions: Span<Action> = *turns.at(idx).actions;
+            let player = *turns.at(idx).player;
+
+            // Validar que el jugador sea el que le toca
+            
+            loop {
+                if idy == actions.len() {
+                    break ();
+                }
+
+                let action = *actions.at(idy);
+                if !validate_and_execute_action(
+                    player, action, ref mecha_dict, ref mecha_static_data
+                ) {
+                    // HIZO TRAMPA
+                    // emitir evento de trampa
+                    valid = false;
+                    break ();
+                }
+                
+                // if is_game_finished(
+                //     game_state.players, ref mecha_dict, ref mecha_static_data
+                // ) { // TERMINO EL JUEGO
+                //     valid = true;
+                //     break ();
+                // }
+                idy += 1;
+            };
+            idx += 1;
+        };
+        valid
     }
 
     fn validate_and_execute_action(

@@ -1,10 +1,15 @@
 use starknet::ContractAddress;
+use mecha_stark::utils::serde::{SpanSerde};
 
 #[derive(Copy, Drop, Serde)]
 struct Game {
-    id: u128,
+    size: u128,
     bet: u128,
     winner: ContractAddress,
+    player_1: ContractAddress,
+    player_2: ContractAddress,
+    mechas_player_1: Span<felt252>,
+    mechas_player_2: Span<felt252>,
 }
 
 #[derive(Copy, Drop, Serde)]
