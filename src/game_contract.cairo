@@ -133,7 +133,6 @@ mod MechaStarkContract {
             assert(approved > bet, 'Not approved');
             usd_token.transferFrom(user, contract, bet);
         } else {
-            usd_token.transferFrom(user, contract, bet);
             _balances::write(user, balance - bet);
         }
         // emitir evento
