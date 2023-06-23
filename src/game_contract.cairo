@@ -1,29 +1,50 @@
 use mecha_stark::components::turn::{Turn};
 use mecha_stark::components::game::{Game};
 use mecha_stark::components::game_state::{GameState};
+use starknet::ContractAddress;
+
+#[abi]
+trait IERC20 {
+    fn name() -> felt252;
+    fn symbol() -> felt252;
+    fn decimals() -> u8;
+    fn totalSupply() -> u256;
+    fn balanceOf(account: ContractAddress) -> u256;
+    fn allowance(owner: ContractAddress, spender: ContractAddress) -> u256;
+    fn transfer(recipient: ContractAddress, amount: u256);
+    fn transferFrom(sender: ContractAddress, recipient: ContractAddress, amount: u256);
+    fn approve(spender: ContractAddress, amount: u256);
+    fn increaseAllowance(spender: ContractAddress, added_value: u256);
+    fn decreaseAllowance(spender: ContractAddress, subtracted_value: u256);
+    fn mint(recipient: ContractAddress, amount: u256);
+}
 
 #[abi]
 trait IMechaStarkContract {
     #[external]
-    fn create_game(mechas_id: Array<felt252>, room_size: u128, bet: u128);
+    fn create_game(mechas_id: Array<felt252>, bet: u256, user: ContractAddress);
     #[external]
-    fn join_game(id_game: u128, mechas_id: Array<felt252>);
+    fn join_game(id_game: u128, mechas_id: Array<felt252>, user: ContractAddress);
     #[view]
     fn validate_game(game_state: GameState, turns: Array<Turn>) -> bool;
     #[external]
-    fn finish_game(game_state: GameState, turns: Array<Turn>);
+    fn finish_game(id_game: u128, game_state: GameState, turns: Array<Turn>);
     #[view]
     fn get_game(id_game: u128) -> Game;
+    #[external]
+    fn claimRewards(user: ContractAddress);
 }
 
 #[contract]
 mod MechaStarkContract {
     use array::{ArrayTrait, SpanTrait};
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address, get_contract_address};
+    use traits::{ Into, TryInto };
 
     use mecha_stark::components::turn::{Action, ActionTrait, TypeAction, Turn};
     use mecha_stark::components::game::{Game, StatusGame, MechaAttributes};
     use mecha_stark::components::game_state::{GameState, PlayerState, MechaState};
+    use mecha_stark::components::game_state_manager::_validate_game;
     use mecha_stark::components::position::{Position, PositionTrait};
     use mecha_stark::components::mecha_data_helper::{
         MechaDict, MechaDictTrait, MechaStaticData, MechaStaticDataTrait
@@ -31,26 +52,47 @@ mod MechaStarkContract {
     use mecha_stark::utils::storage::{GameStorageAccess};
     use mecha_stark::utils::serde::{SpanSerde};
 
-    use super::IMechaStarkContract;
+    use super::{ IERC20Dispatcher, IERC20DispatcherTrait };
 
     struct Storage {
         _owner: ContractAddress,
         _token: ContractAddress,
         _count_games: u128,
         _games: LegacyMap<u128, Game>,
+        _balances: LegacyMap<ContractAddress, u256>
+    }
+
+    #[constructor]
+    fn constructor(token: ContractAddress) {
+        _owner::write(get_caller_address());
+        _token::write(token);
+        _count_games::write(0);
     }
 
     #[external]
-    fn create_game(mechas_id: Array<felt252>, room_size: u128, bet: u128) {
-        // Cuando se crea el juego, se debe pagar el bet
-        // Validar que sean 5 mechas 
+    fn create_game(mechas_id: Array<felt252>, bet: u256, user: ContractAddress) {
         assert(mechas_id.len() == 5, 'Se deben enviar 5 mechas');
-        // Validar que los mechas sean del mismo owner
 
+        // apuesta
+        // si ya tengo balance que me deje jugar directo
+        let balance = _balances::read(user);
+        if balance < bet {
+            let contract = get_contract_address();
+            let usd_token = IERC20Dispatcher { contract_address: _token::read() };
+            let approved: u256 = usd_token.allowance(user, contract);
+            assert(approved > bet, 'Not approved');
+            usd_token.transferFrom(user, contract, bet);
+        } else {
+            _balances::write(user, balance - bet);
+        }
+        // emitir evento
+        //
+
+        // Validar que los mechas sean del mismo owner
         let player_address = get_caller_address();
         _games::write(_count_games::read(), Game {
-            bet: bet,
-            size: room_size,
+            bet: 1,
+            size: 2,
             status: StatusGame::Waiting(()),
             winner: starknet::contract_address_const::<0>(),
             player_1: player_address,
@@ -63,19 +105,43 @@ mod MechaStarkContract {
     }
 
     #[external]
-    fn join_game(id_game: u128, mechas_id: Array<felt252>) {
-        // El jugador que se une acepta pagar el bet
-        // Validar que sean 5 mechas 
+    fn claimRewards(user: ContractAddress) {
+        let contract = get_contract_address();
+        let balance = _balances::read(user);
+        assert(balance > 0, 'Dont have balance');
+        let usd_token = IERC20Dispatcher { contract_address: _token::read() };
+        _balances::write(user, 0); 
+        usd_token.mint(user, balance);
+    }
+
+    #[external]
+    fn join_game(id_game: u128, mechas_id: Array<felt252>, user: ContractAddress) {
+
         assert(mechas_id.len() == 5, 'Se deben enviar 5 mechas');
         // Validar que los mechas sean del mismo owner
-        // Si hay espacio en la sala ==> Agregar al jugador
-        // Si completo la sala ==> cambio el estado a iniciar juego
-        
         let game = _games::read(id_game);
+        // assert(game.status == StatusGame::Waiting(()), 'join_game - game is not waiting');
+
+        // apuesta
+        // si ya tengo balance que me deje jugar directo
+        let balance = _balances::read(user);
+        let bet = 1_u256; // ver por que no se guardar en u256
+        if balance < bet {
+            let contract = get_contract_address();
+            let usd_token = IERC20Dispatcher { contract_address: _token::read() };
+            let approved: u256 = usd_token.allowance(user, contract);
+            assert(approved > bet, 'Not approved');
+            usd_token.transferFrom(user, contract, bet);
+        } else {
+            usd_token.transferFrom(user, contract, bet);
+            _balances::write(user, balance - bet);
+        }
+        // emitir evento
+        //
 
         let player_address = get_caller_address();
         _games::write(id_game, Game {
-            bet: game.bet,
+            bet: game.bet, // ver por que no se guardar en u256
             size: game.size,
             status: StatusGame::Progress(()),
             winner: game.winner,
@@ -92,12 +158,11 @@ mod MechaStarkContract {
     }
 
     #[external]
-    fn finish_game(game_state: GameState, turns: Array<Turn>) {
-        // let winner = validate_game() -> winner
+    fn finish_game(id_game: u128, game_state: GameState, turns: Array<Turn>) {
+        assert_only_owner();
         if _validate_game(game_state, turns) {
             // let bet = get_bet_by_game()
-            // transferir el bet al ganador
-            // escribir en el game quien gano
+            // _balances::write(user_winner, balance + bet);
         } else {
             panic_with_felt252('Mecha stark - finishing game');
         }
@@ -108,207 +173,9 @@ mod MechaStarkContract {
         _games::read(id_game)
     }
 
-    // fn is_game_finished(
-    //     players: Span<PlayerState>,
-    //     ref mecha_dict: MechaDict,
-    //     ref mecha_static_data: MechaStaticData
-    // ) -> bool {
-    //     let mut idx = 0;
-    //     let mut live_players = 0;
-    //     loop {
-    //         if idx == players.len() {
-    //             break ();
-    //         }
-    //         if live_players == 2 {
-    //             break ();
-    //         }
-    //         let player = *players.at(idx).owner;
-    //         if !is_player_finished(player, ref mecha_dict, ref mecha_static_data) {
-    //             live_players += 1;
-    //         }
-    //         idx += 1;
-    //     };
-    //     live_players == 1
-    // }
-
-    // fn is_player_finished(
-    //     player: ContractAddress, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData
-    // ) -> bool {
-    //     let mechas_by_player = mecha_static_data.get_mechas_ids_by_owner(player);
-    //     let mut idx = 0;
-    //     let mut dead_mechas = 0;
-    //     loop {
-    //         if idx == mechas_by_player.len() {
-    //             break ();
-    //         }
-    //         let mecha_id = *mechas_by_player.at(idx);
-    //         let mecha_hp = mecha_dict.get_mecha_hp(mecha_id);
-    //         if mecha_hp == 0 {
-    //             dead_mechas += 1;
-    //         }
-    //         idx += 1;
-    //     };
-    //     dead_mechas == mechas_by_player.len()
-    // }
-
-    fn _validate_game(game_state: GameState, turns: Array<Turn>) -> bool {
-        let mut mecha_dict = load_initial_state(game_state);
-        let mut mecha_static_data = load_static_data(game_state);
-
-        let mut valid = true;
-        let mut idx = 0;
-        loop {
-            if idx == turns.len() {
-                break ();
-            }
-            let mut idy = 0;
-            let mut actions: Span<Action> = *turns.at(idx).actions;
-            let player = *turns.at(idx).player;
-
-            // Validar que el jugador sea el que le toca
-            
-            loop {
-                if idy == actions.len() {
-                    break ();
-                }
-
-                let action = *actions.at(idy);
-                if !validate_and_execute_action(
-                    player, action, ref mecha_dict, ref mecha_static_data
-                ) {
-                    // HIZO TRAMPA
-                    // emitir evento de trampa
-                    valid = false;
-                    break ();
-                }
-                
-                // if is_game_finished(
-                //     game_state.players, ref mecha_dict, ref mecha_static_data
-                // ) { // TERMINO EL JUEGO
-                //     valid = true;
-                //     break ();
-                // }
-                idy += 1;
-            };
-            idx += 1;
-        };
-        valid
-    }
-
-    fn validate_and_execute_action(
-        player: ContractAddress,
-        action: Action,
-        ref mecha_dict: MechaDict,
-        ref mecha_static_data: MechaStaticData
-    ) -> bool {
-        
-        // el mecha atacante esta vivo
-        if mecha_dict.get_mecha_hp(action.id_mecha) == 0 {
-            return false;
-        }
-
-        match action.first_action {
-            TypeAction::Movement(()) => {
-                if !action.movement.has_default_value() {
-                    if !action.validate_movement(player, ref mecha_dict, ref mecha_static_data) {
-                        return false;
-                    }
-                    mecha_dict.update_mecha_position(action.id_mecha, action.movement);
-                }
-
-                if action.attack.has_default_value() {
-                    if !action.validate_attack(player, ref mecha_dict, ref mecha_static_data) {
-                        return false;
-                    }
-                    mecha_dict.update_mecha_hp(action.id_mecha, action.attack, ref mecha_static_data);
-                }
-            },
-            TypeAction::Attack(()) => {
-                if action.attack.has_default_value() {
-                    if !action.validate_attack(player, ref mecha_dict, ref mecha_static_data) {
-                        return false;
-                    }
-                    mecha_dict.update_mecha_hp(action.id_mecha, action.attack, ref mecha_static_data);
-                }
-
-                if !action.movement.has_default_value() {
-                    if !action.validate_movement(player, ref mecha_dict, ref mecha_static_data) {
-                        return false;
-                    }
-                    mecha_dict.update_mecha_position(action.id_mecha, action.movement);
-                }
-            },
-        }
-        return true;
-    }
-
-    fn load_initial_state(game_state: GameState) -> MechaDict {
-        let mut mecha_dict = MechaDictTrait::new();
-        _load_initial_state(game_state.players, 0, mecha_dict)
-    }
-
-    fn _load_initial_state(
-        players: Span<PlayerState>, idx: usize, mut mecha_dict: MechaDict
-    ) -> MechaDict {
-        if players.len() == idx {
-            return mecha_dict;
-        }
-        let owner = *players.at(idx).owner;
-
-        let mut idy = 0;
-        loop {
-            let states: Span<MechaState> = *players.at(idx).mechas;
-            if idy == states.len() {
-                break ();
-            }
-            let mecha_state = *states.at(idy);
-            mecha_dict.update_mecha_position(mecha_state.id, mecha_state.position);
-            mecha_dict.set_mecha_hp(mecha_state.id, mecha_state.hp);
-            idy += 1;
-        };
-        _load_initial_state(players, idx + 1, mecha_dict)
-    }
-
-    fn load_static_data(game_state: GameState) -> MechaStaticData {
-        let mut mecha_data = MechaStaticDataTrait::new();
-        _load_static_data(game_state.players, 0, mecha_data, 1)
-    }
-
-    fn _load_static_data(
-        players: Span<PlayerState>,
-        idx: usize,
-        mut mecha_data: MechaStaticData,
-        mut mecha_spoof_id: u128
-    ) -> MechaStaticData {
-        if players.len() == idx {
-            return mecha_data;
-        }
-        let owner = *players.at(idx).owner;
-
-        let mut idy = 0;
-        loop {
-            let states: Span<MechaState> = *players.at(idx).mechas;
-            if idy == states.len() {
-                break ();
-            }
-            // pedir al contrato los atributos del mecha por states
-            let attribute = spoof_mecha_attributes(mecha_spoof_id);
-            mecha_data.insert_mecha_data(owner, attribute);
-            idy += 1;
-            mecha_spoof_id += 1;
-        };
-        _load_static_data(players, idx + 1, mecha_data, mecha_spoof_id)
-    }
-
-    fn spoof_mecha_attributes(id: u128) -> MechaAttributes {
-        MechaAttributes {
-            id,
-            hp: 100,
-            attack: 10,
-            armor: 10,
-            movement: 5,
-            attack_shoot_distance: 4,
-            attack_meele_distance: 2,
-        }
+    fn assert_only_owner() {
+        let owner: ContractAddress = _owner::read();
+        let caller: ContractAddress = get_caller_address();
+        assert(caller == owner, 'Only owner');
     }
 }

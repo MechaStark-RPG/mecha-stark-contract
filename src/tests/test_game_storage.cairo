@@ -37,7 +37,8 @@ mod tests {
         mechas.append(4);
         mechas.append(5);
 
-        contract0.create_game(mechas, 2, 5);
+        let user = starknet::contract_address_const::<0>();
+        contract0.create_game(mechas, 5, user);
 
         let game_0 = contract0.get_game(0); 
 
@@ -56,7 +57,8 @@ mod tests {
         mechas_2.append(6);
         mechas_2.append(5);
 
-        contract0.join_game(0, mechas_2);
+        let user_2 = starknet::contract_address_const::<0>();
+        contract0.join_game(0, mechas_2, user_2);
 
         let game_0 = contract0.get_game(0); 
 
