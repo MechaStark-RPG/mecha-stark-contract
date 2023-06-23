@@ -5,11 +5,40 @@ use mecha_stark::utils::serde::{SpanSerde};
 struct Game {
     size: u128,
     bet: u128,
+    status: StatusGame,
     winner: ContractAddress,
     player_1: ContractAddress,
     player_2: ContractAddress,
     mechas_player_1: Span<felt252>,
     mechas_player_2: Span<felt252>,
+}
+
+#[derive(Copy, Drop, Serde)]
+enum StatusGame {
+    Waiting: (),
+    Progress: (),
+    Finished: (),
+}
+
+impl IntoFelt252StatusGameImpl of Into<StatusGame, felt252> {
+    fn into(self: StatusGame) -> felt252 {
+        match self {
+            StatusGame::Waiting(()) => 0,
+            StatusGame::Progress(()) => 1,
+            StatusGame::Finished(()) => 2,
+        }
+    }
+}
+
+impl IntoStatusGameFelt252Impl of Into<felt252, StatusGame> {
+    fn into(self: felt252) -> StatusGame {
+        if self == 0 {
+            return StatusGame::Waiting(());
+        } else if self == 1 {
+            return StatusGame::Progress(());
+        }
+        StatusGame::Finished(())
+    }
 }
 
 #[derive(Copy, Drop, Serde)]

@@ -22,7 +22,7 @@ mod MechaStarkContract {
     use starknet::{ContractAddress, get_caller_address};
 
     use mecha_stark::components::turn::{Action, ActionTrait, TypeAction, Turn};
-    use mecha_stark::components::game::{Game, MechaAttributes};
+    use mecha_stark::components::game::{Game, StatusGame, MechaAttributes};
     use mecha_stark::components::game_state::{GameState, PlayerState, MechaState};
     use mecha_stark::components::position::{Position, PositionTrait};
     use mecha_stark::components::mecha_data_helper::{
@@ -38,8 +38,6 @@ mod MechaStarkContract {
         _token: ContractAddress,
         _count_games: u128,
         _games: LegacyMap<u128, Game>,
-        // _players: LegacyMap<(u128, felt252), Span<felt252>>,
-        // _mechas_ids: LegacyMap<(u128, u128), ContractAddress>,
     }
 
     #[external]
@@ -53,6 +51,7 @@ mod MechaStarkContract {
         _games::write(_count_games::read(), Game {
             bet: bet,
             size: room_size,
+            status: StatusGame::Waiting(()),
             winner: starknet::contract_address_const::<0>(),
             player_1: player_address,
             player_2: starknet::contract_address_const::<0>(),
@@ -78,6 +77,7 @@ mod MechaStarkContract {
         _games::write(id_game, Game {
             bet: game.bet,
             size: game.size,
+            status: StatusGame::Progress(()),
             winner: game.winner,
             player_1: game.player_1,
             player_2: player_address,
