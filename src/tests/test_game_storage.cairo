@@ -37,16 +37,16 @@ mod tests {
         mechas.append(5);
 
         let user = starknet::contract_address_const::<0>();
-        contract0.create_game(mechas, 5, user);
+        contract0.create_game(mechas);
 
         let game_0 = contract0.get_game(0);
 
-        assert(game_0.mechas_player_1.len() == 5, 'Falle en game storage');
-        assert(*game_0.mechas_player_1.at(0) == 923, 'Falle en game storage');
-        assert(*game_0.mechas_player_1.at(1) == 123, 'Falle en game storage');
-        assert(*game_0.mechas_player_1.at(2) == 3, 'Falle en game storage');
-        assert(*game_0.mechas_player_1.at(3) == 4, 'Falle en game storage');
-        assert(*game_0.mechas_player_1.at(4) == 5, 'Falle en game storage');
+        assert(game_0.mechas_player_1.len() == 5, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_1.at(0) == 923, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_1.at(1) == 123, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_1.at(2) == 3, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_1.at(3) == 4, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_1.at(4) == 5, 'ERROR_SAVE_STORAGE');
 
         let mut mechas_2 = ArrayTrait::new();
         mechas_2.append(9);
@@ -56,22 +56,22 @@ mod tests {
         mechas_2.append(5);
 
         let user_2 = starknet::contract_address_const::<0>();
-        contract0.join_game(0, mechas_2, user_2);
+        contract0.join_game(0, mechas_2);
 
         let game_0 = contract0.get_game(0);
 
-        assert(game_0.mechas_player_1.len() == 5, 'Falle en game storage');
-        assert(*game_0.mechas_player_1.at(0) == 923, 'Falle en game storage');
-        assert(*game_0.mechas_player_1.at(1) == 123, 'Falle en game storage');
-        assert(*game_0.mechas_player_1.at(2) == 3, 'Falle en game storage');
-        assert(*game_0.mechas_player_1.at(3) == 4, 'Falle en game storage');
-        assert(*game_0.mechas_player_1.at(4) == 5, 'Falle en game storage');
+        assert(game_0.mechas_player_1.len() == 5, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_1.at(0) == 923, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_1.at(1) == 123, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_1.at(2) == 3, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_1.at(3) == 4, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_1.at(4) == 5, 'ERROR_SAVE_STORAGE');
 
-        assert(game_0.mechas_player_2.len() == 5, 'Falle en game storage');
-        assert(*game_0.mechas_player_2.at(0) == 9, 'Falle en game storage');
-        assert(*game_0.mechas_player_2.at(1) == 8, 'Falle en game storage');
-        assert(*game_0.mechas_player_2.at(2) == 7, 'Falle en game storage');
-        assert(*game_0.mechas_player_2.at(3) == 6, 'Falle en game storage');
-        assert(*game_0.mechas_player_2.at(4) == 5, 'Falle en game storage');
+        assert(game_0.mechas_player_2.len() == 5, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_2.at(0) == 9, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_2.at(1) == 8, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_2.at(2) == 7, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_2.at(3) == 6, 'ERROR_SAVE_STORAGE');
+        assert(*game_0.mechas_player_2.at(4) == 5, 'ERROR_SAVE_STORAGE');
     }
 }

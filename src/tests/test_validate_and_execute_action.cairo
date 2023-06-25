@@ -66,7 +66,7 @@ mod tests {
         // Action 1
 
         let action = Action {
-            id_mecha: 1, first_action: TypeAction::Attack(()), movement: Position {
+            mecha_id: 1, first_action: TypeAction::Attack(()), movement: Position {
                 x: 1, y: 2
                 }, attack: Position {
                 x: 5, y: 5
@@ -76,23 +76,23 @@ mod tests {
         let validate = validate_and_execute_action(
             player_1, action, ref mecha_dict, ref mecha_data
         );
-        assert(validate == true, '');
+        assert(validate == true, 'INVALID ACTION');
 
         // Player 1
         assert(
-            mecha_dict.get_position_by_mecha_id(1) == Position { x: 1, y: 2 }, 'validate action'
+            mecha_dict.get_position_by_mecha_id(1) == Position { x: 1, y: 2 }, 'INVALID ACTION'
         );
-        assert(mecha_dict.get_mecha_hp(1) == 100, 'validate action');
+        assert(mecha_dict.get_mecha_hp(1) == 100, 'INVALID ACTION');
 
         // // Player 2
         assert(
-            mecha_dict.get_position_by_mecha_id(2) == Position { x: 5, y: 5 }, 'validate action'
+            mecha_dict.get_position_by_mecha_id(2) == Position { x: 5, y: 5 }, 'INVALID ACTION'
         );
-        assert(mecha_dict.get_mecha_hp(2) == 90, 'validate action');
+        assert(mecha_dict.get_mecha_hp(2) == 90, 'INVALID ACTION');
 
         // Action 2
         let action = Action {
-            id_mecha: 2, first_action: TypeAction::Movement(()), movement: Position {
+            mecha_id: 2, first_action: TypeAction::Movement(()), movement: Position {
                 x: 3, y: 4
                 }, attack: Position {
                 x: 1, y: 2
@@ -102,18 +102,18 @@ mod tests {
         let validate = validate_and_execute_action(
             player_2, action, ref mecha_dict, ref mecha_data
         );
-        assert(validate == true, '');
+        assert(validate == true, 'INVALID ACTION');
 
         // Player 1
         assert(
-            mecha_dict.get_position_by_mecha_id(1) == Position { x: 1, y: 2 }, 'validate action'
+            mecha_dict.get_position_by_mecha_id(1) == Position { x: 1, y: 2 }, 'INVALID ACTION'
         );
-        assert(mecha_dict.get_mecha_hp(1) == 75, 'validate action');
+        assert(mecha_dict.get_mecha_hp(1) == 75, 'INVALID ACTION');
 
         // Player 2
         assert(
-            mecha_dict.get_position_by_mecha_id(2) == Position { x: 3, y: 4 }, 'validate action'
+            mecha_dict.get_position_by_mecha_id(2) == Position { x: 3, y: 4 }, 'INVALID ACTION'
         );
-        assert(mecha_dict.get_mecha_hp(2) == 90, 'validate action');
+        assert(mecha_dict.get_mecha_hp(2) == 90, 'INVALID ACTION');
     }
 }

@@ -3,8 +3,6 @@ use mecha_stark::utils::serde::{SpanSerde};
 
 #[derive(Copy, Drop, Serde)]
 struct Game {
-    size: u128,
-    bet: u128,
     status: u8,
     winner: ContractAddress,
     player_1: ContractAddress,
@@ -14,7 +12,7 @@ struct Game {
 }
 
 #[derive(Copy, Drop, Serde)]
-enum GameStatus {
+enum GameResult {
     Winner1: (),
     Winner2: (),
     Cheater1: (),

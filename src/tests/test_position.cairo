@@ -14,6 +14,6 @@ mod tests {
     fn happy_path() {
         let p1 = Position { x: 1, y: 1 };
         let p2 = Position { x: 2, y: 2 };
-        assert(p1.distance(p2) == 2, 'Distance should be 1');
+        assert(p1.distance(p2) == 2, 'ERROR_DISTANCE');
     }
 }

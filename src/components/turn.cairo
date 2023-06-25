@@ -12,14 +12,14 @@ use mecha_stark::utils::serde::{SpanSerde};
 
 #[derive(Copy, Drop, Serde)]
 struct Turn {
-    id_game: u128,
+    game_id: u128,
     player: ContractAddress,
     actions: Span<Action>,
 }
 
 #[derive(Copy, Drop, Serde)]
 struct Action {
-    id_mecha: u128,
+    mecha_id: u128,
     first_action: TypeAction,
     movement: Position,
     attack: Position,
@@ -47,29 +47,31 @@ impl ActionTraitImpl of ActionTrait {
         ref mecha_dict: MechaDict,
         ref mecha_static_data: MechaStaticData
     ) -> bool {
-        // ataco dentro del mapa
+        // inside the map
         if !position_within_the_map(*self.attack) {
             return false;
         }
 
-        // dentro del rango de ataque
-        let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(*self.id_mecha);
+        // within attack range
+        let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(*self.mecha_id);
         let mecha_distance = mecha_dict
-            .get_position_by_mecha_id(*self.id_mecha)
+            .get_position_by_mecha_id(*self.mecha_id)
             .distance(*self.attack);
         if mecha_distance > mecha_attributes.attack_shoot_distance {
             return false;
         }
 
-        // mecha enemigo en esa posicion
+        // busy cell
         let mecha_id_received = mecha_dict.get_mecha_id_by_position(*self.attack.into());
         if mecha_id_received == 0 {
             return false;
         }
+        // I attack myself
         let (owner_received, _) = mecha_static_data.get_mecha_data_by_mecha_id(mecha_id_received);
         if owner_received == player {
             return false;
         }
+        // dead mecha
         let mecha_id_received_hp = mecha_dict.get_mecha_hp(mecha_id_received);
         if mecha_id_received_hp == 0 {
             return false;
@@ -83,20 +85,20 @@ impl ActionTraitImpl of ActionTrait {
         ref mecha_dict: MechaDict,
         ref mecha_static_data: MechaStaticData
     ) -> bool {
-        // movimiento dentro del mapa
+        // inside the map
         if !position_within_the_map(*self.movement) {
             return false;
         }
 
-        // esta ocupado el lugar
+        // busy cell
         if mecha_dict.get_mecha_id_by_position(*self.movement.into()) > 0 {
             return false;
         }
 
-        // dentro del rango de movimiento
-        let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(*self.id_mecha);
+        // within movement range
+        let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(*self.mecha_id);
         let mecha_distance = mecha_dict
-            .get_position_by_mecha_id(*self.id_mecha)
+            .get_position_by_mecha_id(*self.mecha_id)
             .distance(*self.movement);
         if mecha_distance > mecha_attributes.movement {
             return false;

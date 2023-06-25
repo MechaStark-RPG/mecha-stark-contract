@@ -26,11 +26,11 @@ trait MechaDictTrait {
     fn update_mecha_position(ref self: MechaDict, mecha_id: u128, position: Position);
     fn update_mecha_hp(
         ref self: MechaDict,
-        id_mecha: u128,
+        mecha_id: u128,
         position_attack: Position,
         ref mecha_static_data: MechaStaticData
     );
-    fn set_mecha_hp(ref self: MechaDict, id_mecha: u128, hp: u128);
+    fn set_mecha_hp(ref self: MechaDict, mecha_id: u128, hp: u128);
 }
 
 impl MechaDictTraitImpl of MechaDictTrait {
@@ -42,8 +42,8 @@ impl MechaDictTraitImpl of MechaDictTrait {
     }
 
     fn get_mecha_id_by_position(ref self: MechaDict, position: Position) -> u128 {
+        // 0 -> cell empty
         let mecha_id = self.mechas_for_positions.get(position.into());
-        // si mecha_id es 0 es porque no hay mecha en esa posicion
         mecha_id
     }
 
@@ -51,7 +51,7 @@ impl MechaDictTraitImpl of MechaDictTrait {
         let position = self.positions_for_mechas.get(mecha_id.into());
         let position: Position = position.into();
         if position.has_default_value() {
-            panic_with_felt252('Mecha data - Invalid position');
+            panic_with_felt252('mecha_data_h: INVALID_POSITION');
         }
         position.into()
     }
@@ -65,20 +65,20 @@ impl MechaDictTraitImpl of MechaDictTrait {
         self.positions_for_mechas.insert(mecha_id.into(), position.into());
     }
 
-    fn set_mecha_hp(ref self: MechaDict, id_mecha: u128, hp: u128) {
-        self.hp.insert(id_mecha.into(), hp);
+    fn set_mecha_hp(ref self: MechaDict, mecha_id: u128, hp: u128) {
+        self.hp.insert(mecha_id.into(), hp);
     }
 
     fn update_mecha_hp(
         ref self: MechaDict,
-        id_mecha: u128,
+        mecha_id: u128,
         position_attack: Position,
         ref mecha_static_data: MechaStaticData
     ) {
-        let (_, mecha_attack_attribute) = mecha_static_data.get_mecha_data_by_mecha_id(id_mecha);
+        let (_, mecha_attack_attribute) = mecha_static_data.get_mecha_data_by_mecha_id(mecha_id);
         let mecha_received_id = self.get_mecha_id_by_position(position_attack);
         let mecha_received_hp = self.get_mecha_hp(mecha_received_id);
-        // evitar numero negativo
+        // negative overflow
         if mecha_received_hp < mecha_attack_attribute.attack {
             self.set_mecha_hp(mecha_received_id, 0);
             self.update_mecha_position(mecha_received_id, PositionTrait::new_default_value());
@@ -129,7 +129,7 @@ fn _get_mecha_data_by_mecha_id(
     mecha_data: @MechaStaticData, mecha_id: u128, idx: usize
 ) -> (ContractAddress, MechaAttributes) {
     if idx == mecha_data.owners.len() {
-        panic_with_felt252('Mecha data - Invalid mecha id');
+        panic_with_felt252('mecha_data_h: INVALID_MECHA_ID');
     }
 
     let mecha_attributes = *mecha_data.attributes.at(idx);

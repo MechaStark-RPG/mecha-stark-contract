@@ -42,7 +42,7 @@ mod tests {
             );
 
         let action = Action {
-            id_mecha: 1, first_action: TypeAction::Movement(()), movement: Position {
+            mecha_id: 1, first_action: TypeAction::Movement(()), movement: Position {
                 x: 2, y: 2
                 }, attack: Position {
                 x: 5, y: 5
@@ -50,7 +50,7 @@ mod tests {
         };
         assert(
             action.validate_movement(player_1, ref mecha_dict, ref mecha_data) == true,
-            'Movement is not valid'
+            'INVALID_MOVEMENT'
         );
     }
 
@@ -81,7 +81,7 @@ mod tests {
             );
 
         let action = Action {
-            id_mecha: 1, first_action: TypeAction::Movement(()), movement: Position {
+            mecha_id: 1, first_action: TypeAction::Movement(()), movement: Position {
                 x: 2, y: 15
                 }, attack: Position {
                 x: 5, y: 5
@@ -89,7 +89,7 @@ mod tests {
         };
         assert(
             action.validate_movement(player_1, ref mecha_dict, ref mecha_data) == false,
-            'Movement is not valid'
+            'INVALID_MOVEMENT'
         );
     }
 
@@ -141,7 +141,7 @@ mod tests {
             );
 
         let action = Action {
-            id_mecha: 1, first_action: TypeAction::Movement(()), movement: Position {
+            mecha_id: 1, first_action: TypeAction::Movement(()), movement: Position {
                 x: 5, y: 5
                 }, attack: Position {
                 x: 5, y: 5
@@ -149,7 +149,7 @@ mod tests {
         };
         assert(
             action.validate_movement(player_1, ref mecha_dict, ref mecha_data) == false,
-            'Movement is not valid'
+            'INVALID_MOVEMENT'
         );
     }
 
@@ -180,7 +180,7 @@ mod tests {
             );
 
         let action = Action {
-            id_mecha: 1, first_action: TypeAction::Movement(()), movement: Position {
+            mecha_id: 1, first_action: TypeAction::Movement(()), movement: Position {
                 x: 3, y: 3
                 }, attack: Position {
                 x: 5, y: 5
@@ -188,7 +188,7 @@ mod tests {
         };
         assert(
             action.validate_movement(player_1, ref mecha_dict, ref mecha_data) == false,
-            'Movement is not valid'
+            'INVALID_MOVEMENT'
         );
     }
 }

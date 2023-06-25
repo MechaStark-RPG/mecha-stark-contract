@@ -37,7 +37,7 @@ mod tests {
 
         // PLAYER 1
         let action_1_player_1 = Action {
-            id_mecha: 1,
+            mecha_id: 1,
             first_action: TypeAction::Attack(()),
             movement: position_default,
             attack: Position {
@@ -46,7 +46,7 @@ mod tests {
         };
 
         let action_2_player_1 = Action {
-            id_mecha: 2,
+            mecha_id: 2,
             first_action: TypeAction::Attack(()),
             movement: position_default,
             attack: Position {
@@ -55,7 +55,7 @@ mod tests {
         };
 
         let action_3_player_1 = Action {
-            id_mecha: 3,
+            mecha_id: 3,
             first_action: TypeAction::Attack(()),
             movement: position_default,
             attack: Position {
@@ -64,7 +64,7 @@ mod tests {
         };
 
         let action_4_player_1 = Action {
-            id_mecha: 4,
+            mecha_id: 4,
             first_action: TypeAction::Attack(()),
             movement: position_default,
             attack: Position {
@@ -73,7 +73,7 @@ mod tests {
         };
 
         let action_5_player_1 = Action {
-            id_mecha: 5,
+            mecha_id: 5,
             first_action: TypeAction::Attack(()),
             movement: position_default,
             attack: Position {
@@ -88,9 +88,9 @@ mod tests {
         actions_player_1.append(action_4_player_1);
         actions_player_1.append(action_5_player_1);
 
-        let id_game = 1;
+        let game_id = 1;
         let player_1 = starknet::contract_address_const::<10>();
-        let turn_player_1 = Turn { id_game, player: player_1, actions: actions_player_1.span() };
+        let turn_player_1 = Turn { game_id, player: player_1, actions: actions_player_1.span() };
 
         let mecha_state_1_player_1 = MechaState {
             id: 1, hp: 100, position: Position { x: 2, y: 0 }
@@ -118,7 +118,7 @@ mod tests {
         // PLAYER 2
 
         let action_1_player_2 = Action {
-            id_mecha: 6,
+            mecha_id: 6,
             first_action: TypeAction::Attack(()),
             movement: position_default,
             attack: Position {
@@ -127,7 +127,7 @@ mod tests {
         };
 
         let action_2_player_2 = Action {
-            id_mecha: 7,
+            mecha_id: 7,
             first_action: TypeAction::Attack(()),
             movement: position_default,
             attack: Position {
@@ -136,7 +136,7 @@ mod tests {
         };
 
         let action_3_player_2 = Action {
-            id_mecha: 8,
+            mecha_id: 8,
             first_action: TypeAction::Attack(()),
             movement: position_default,
             attack: Position {
@@ -145,7 +145,7 @@ mod tests {
         };
 
         let action_4_player_2 = Action {
-            id_mecha: 9,
+            mecha_id: 9,
             first_action: TypeAction::Attack(()),
             movement: position_default,
             attack: Position {
@@ -154,7 +154,7 @@ mod tests {
         };
 
         let action_5_player_2 = Action {
-            id_mecha: 10,
+            mecha_id: 10,
             first_action: TypeAction::Attack(()),
             movement: position_default,
             attack: Position {
@@ -170,7 +170,7 @@ mod tests {
         actions_player_2.append(action_5_player_2);
 
         let player_2 = starknet::contract_address_const::<10>();
-        let turn_player_2 = Turn { id_game, player: player_2, actions: actions_player_2.span() };
+        let turn_player_2 = Turn { game_id, player: player_2, actions: actions_player_2.span() };
 
         let mecha_state_1_player_2 = MechaState {
             id: 6, hp: 100, position: Position { x: 5, y: 0 }
@@ -195,13 +195,12 @@ mod tests {
         mechas_player_2.append(mecha_state_4_player_2);
         mechas_player_2.append(mecha_state_5_player_2);
 
-        // // // //
         let mut turns = ArrayTrait::new();
         turns.append(turn_player_1);
         turns.append(turn_player_2);
 
         let game_state = GameState {
-            id_game,
+            game_id,
             player_1,
             player_2,
             mechas_state_player_1: mechas_player_1.span(),
@@ -213,99 +212,99 @@ mod tests {
 
         // PLAYER 1
         assert(
-            mecha_dict.get_position_by_mecha_id(1) == Position { x: 2, y: 0 }, 'test mecha helper'
+            mecha_dict.get_position_by_mecha_id(1) == Position { x: 2, y: 0 }, 'ERROR_MECHA_HELPER'
         );
-        assert(mecha_dict.get_mecha_hp(1) == 100, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(1) == 100, 'ERROR_MECHA_HELPER');
 
         assert(
-            mecha_dict.get_position_by_mecha_id(2) == Position { x: 2, y: 1 }, 'test mecha helper'
+            mecha_dict.get_position_by_mecha_id(2) == Position { x: 2, y: 1 }, 'ERROR_MECHA_HELPER'
         );
-        assert(mecha_dict.get_mecha_hp(2) == 100, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(2) == 100, 'ERROR_MECHA_HELPER');
 
         assert(
-            mecha_dict.get_position_by_mecha_id(3) == Position { x: 2, y: 2 }, 'test mecha helper'
+            mecha_dict.get_position_by_mecha_id(3) == Position { x: 2, y: 2 }, 'ERROR_MECHA_HELPER'
         );
-        assert(mecha_dict.get_mecha_hp(3) == 100, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(3) == 100, 'ERROR_MECHA_HELPER');
 
         assert(
-            mecha_dict.get_position_by_mecha_id(4) == Position { x: 2, y: 3 }, 'test mecha helper'
+            mecha_dict.get_position_by_mecha_id(4) == Position { x: 2, y: 3 }, 'ERROR_MECHA_HELPER'
         );
-        assert(mecha_dict.get_mecha_hp(4) == 100, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(4) == 100, 'ERROR_MECHA_HELPER');
 
         assert(
-            mecha_dict.get_position_by_mecha_id(5) == Position { x: 2, y: 4 }, 'test mecha helper'
+            mecha_dict.get_position_by_mecha_id(5) == Position { x: 2, y: 4 }, 'ERROR_MECHA_HELPER'
         );
-        assert(mecha_dict.get_mecha_hp(5) == 100, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(5) == 100, 'ERROR_MECHA_HELPER');
 
         // PLAYER 2
         assert(
-            mecha_dict.get_position_by_mecha_id(6) == Position { x: 5, y: 0 }, 'test mecha helper'
+            mecha_dict.get_position_by_mecha_id(6) == Position { x: 5, y: 0 }, 'ERROR_MECHA_HELPER'
         );
-        assert(mecha_dict.get_mecha_hp(6) == 100, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(6) == 100, 'ERROR_MECHA_HELPER');
 
         assert(
-            mecha_dict.get_position_by_mecha_id(7) == Position { x: 5, y: 1 }, 'test mecha helper'
+            mecha_dict.get_position_by_mecha_id(7) == Position { x: 5, y: 1 }, 'ERROR_MECHA_HELPER'
         );
-        assert(mecha_dict.get_mecha_hp(7) == 100, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(7) == 100, 'ERROR_MECHA_HELPER');
 
         assert(
-            mecha_dict.get_position_by_mecha_id(8) == Position { x: 5, y: 2 }, 'test mecha helper'
+            mecha_dict.get_position_by_mecha_id(8) == Position { x: 5, y: 2 }, 'ERROR_MECHA_HELPER'
         );
-        assert(mecha_dict.get_mecha_hp(8) == 100, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(8) == 100, 'ERROR_MECHA_HELPER');
 
         assert(
-            mecha_dict.get_position_by_mecha_id(9) == Position { x: 5, y: 3 }, 'test mecha helper'
+            mecha_dict.get_position_by_mecha_id(9) == Position { x: 5, y: 3 }, 'ERROR_MECHA_HELPER'
         );
-        assert(mecha_dict.get_mecha_hp(9) == 100, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(9) == 100, 'ERROR_MECHA_HELPER');
 
         assert(
-            mecha_dict.get_position_by_mecha_id(10) == Position { x: 5, y: 4 }, 'test mecha helper'
+            mecha_dict.get_position_by_mecha_id(10) == Position { x: 5, y: 4 }, 'ERROR_MECHA_HELPER'
         );
-        assert(mecha_dict.get_mecha_hp(10) == 100, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(10) == 100, 'ERROR_MECHA_HELPER');
 
         // MECHA DATA
         let mut mecha_static_data = load_static_data(game_state);
 
         // PLAYER 1
         let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(1);
-        assert(mecha_attributes.id == 1, 'test mecha helper');
-        assert(owner == player_1, 'test mecha helper');
+        assert(mecha_attributes.id == 1, 'ERROR_MECHA_HELPER');
+        assert(owner == player_1, 'ERROR_MECHA_HELPER');
 
         let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(2);
-        assert(mecha_attributes.id == 2, 'test mecha helper');
-        assert(owner == player_1, 'test mecha helper');
+        assert(mecha_attributes.id == 2, 'ERROR_MECHA_HELPER');
+        assert(owner == player_1, 'ERROR_MECHA_HELPER');
 
         let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(3);
-        assert(mecha_attributes.id == 3, 'test mecha helper');
-        assert(owner == player_1, 'test mecha helper');
+        assert(mecha_attributes.id == 3, 'ERROR_MECHA_HELPER');
+        assert(owner == player_1, 'ERROR_MECHA_HELPER');
 
         let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(4);
-        assert(mecha_attributes.id == 4, 'test mecha helper');
-        assert(owner == player_1, 'test mecha helper');
+        assert(mecha_attributes.id == 4, 'ERROR_MECHA_HELPER');
+        assert(owner == player_1, 'ERROR_MECHA_HELPER');
 
         let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(5);
-        assert(mecha_attributes.id == 5, 'test mecha helper');
-        assert(owner == player_1, 'test mecha helper');
+        assert(mecha_attributes.id == 5, 'ERROR_MECHA_HELPER');
+        assert(owner == player_1, 'ERROR_MECHA_HELPER');
 
         // PLAYER 2
         let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(6);
-        assert(mecha_attributes.id == 6, 'test mecha helper');
-        assert(owner == player_2, 'test mecha helper');
+        assert(mecha_attributes.id == 6, 'ERROR_MECHA_HELPER');
+        assert(owner == player_2, 'ERROR_MECHA_HELPER');
 
         let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(7);
-        assert(mecha_attributes.id == 7, 'test mecha helper');
-        assert(owner == player_2, 'test mecha helper');
+        assert(mecha_attributes.id == 7, 'ERROR_MECHA_HELPER');
+        assert(owner == player_2, 'ERROR_MECHA_HELPER');
 
         let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(8);
-        assert(mecha_attributes.id == 8, 'test mecha helper');
-        assert(owner == player_2, 'test mecha helper');
+        assert(mecha_attributes.id == 8, 'ERROR_MECHA_HELPER');
+        assert(owner == player_2, 'ERROR_MECHA_HELPER');
 
         let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(9);
-        assert(mecha_attributes.id == 9, 'test mecha helper');
-        assert(owner == player_2, 'test mecha helper');
+        assert(mecha_attributes.id == 9, 'ERROR_MECHA_HELPER');
+        assert(owner == player_2, 'ERROR_MECHA_HELPER');
 
         let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(10);
-        assert(mecha_attributes.id == 10, 'test mecha helper');
-        assert(owner == player_2, 'test mecha helper');
+        assert(mecha_attributes.id == 10, 'ERROR_MECHA_HELPER');
+        assert(owner == player_2, 'ERROR_MECHA_HELPER');
     }
 }
