@@ -1,6 +1,8 @@
-use mecha_stark::components::turn::{Turn};
 use mecha_stark::components::game::{Game};
-use mecha_stark::components::game_state::{GameState};
+use mecha_stark::components::position::{Position};
+use mecha_stark::components::turn::{Action, TypeAction, Turn};
+use mecha_stark::components::game_state::{GameState, MechaState};
+
 use starknet::{ContractAddress, ClassHash};
 
 #[abi]
@@ -16,9 +18,9 @@ trait IMechaStarkContract {
     #[view]
     fn get_game(game_id: u128) -> Game;
     #[external]
-    fn claimRewards(user: ContractAddress);
-    #[external]
     fn upgrade(new_class_hash: ClassHash);
+    #[view]
+    fn nothing(position: Position, action: Action, game_state: GameState, mecha_state: MechaState) -> u128;
 }
 
 #[contract]
@@ -113,23 +115,37 @@ mod MechaStarkContract {
 
     #[external]
     fn finish_game(game_id: u128, game_state: GameState, turns: Array<Turn>) {
-        // machear el id game con el game state
-
         assert_only_owner();
-    // match _validate_game(game_state, turns) {
-    //     GameResult::Winner1(()) => {
+        
+        let game = _games::read(game_id);
+        assert(game.status == Constants::IN_PROGRESS, 'game_contract: INVALID_STATUS');
+        
+        let winner = match _validate_game(game_state, turns) {
+            GameResult::Winner1(()) => {
+                game.player_1
+            },
+            GameResult::Winner2(()) => {
+                game.player_2
+            },
+            GameResult::Cheater1(()) => {
+                game.player_2
+            },
+            GameResult::Cheater2(()) => {
+                game.player_1
+            },
+        };
 
-    //     },
-    //     GameResult::Winner2(()) => {
-
-    //     },
-    //     GameResult::Cheater1(()) => {
-
-    //     },
-    //     GameResult::Cheater2(()) => {
-
-    //     },
-    // };
+        _games::write(
+            game_id,
+            Game {
+                status: Constants::FINISHED,
+                winner,
+                player_1: game.player_1,
+                player_2: game.player_2,
+                mechas_player_1: game.mechas_player_1,
+                mechas_player_2: game.mechas_player_2,
+            }
+        );
     }
 
     #[view]
@@ -147,5 +163,10 @@ mod MechaStarkContract {
         let owner: ContractAddress = _owner::read();
         let caller: ContractAddress = get_caller_address();
         assert(caller == owner, 'game_contract: ONLY_OWNER');
+    }
+
+    #[view]
+    fn nothing(position: Position, action: Action, game_state: GameState, mecha_state: MechaState) -> u128 {
+        0
     }
 }

@@ -151,7 +151,7 @@ fn spoof_mecha_attributes(id: u128) -> MechaAttributes {
     MechaAttributes {
         id,
         hp: 100,
-        attack: 55,
+        attack: 15,
         armor: 10,
         movement: 5,
         attack_shoot_distance: 4,
