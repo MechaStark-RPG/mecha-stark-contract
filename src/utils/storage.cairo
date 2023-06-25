@@ -192,7 +192,9 @@ impl GameStorageAccess of StorageAccess<Game> {
         );
         let mechas_player_2 = StorageAccess::read(address_domain, mechas_player_2_base)?;
 
-        Result::Ok(Game { size, bet, status, winner, player_1, player_2, mechas_player_1, mechas_player_2 })
+        Result::Ok(
+            Game { size, bet, status, winner, player_1, player_2, mechas_player_1, mechas_player_2 }
+        )
     }
 
     fn write(address_domain: u32, base: StorageBaseAddress, mut value: Game) -> SyscallResult<()> {

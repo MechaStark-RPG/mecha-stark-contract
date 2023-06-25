@@ -3,11 +3,11 @@ use dict::Felt252DictTrait;
 use traits::{Into, TryInto};
 use starknet::ContractAddress;
 
-use mecha_stark::components::game::{MechaAttributes, MechaAttributesTrait};
+use mecha_stark::components::game::{MechaAttributes};
 use mecha_stark::components::game_state::{MechaState};
 use mecha_stark::components::position::{
-    Position, PositionTrait, IntoU128ToPositionImpl, IntoPositionToU128Impl, IntoFelt252ToPositionImpl,
-    IntoPositionToFelt252Impl, PositionPartialEq
+    Position, PositionTrait, IntoU128ToPositionImpl, IntoPositionToU128Impl,
+    IntoFelt252ToPositionImpl, IntoPositionToFelt252Impl, PositionPartialEq
 };
 use mecha_stark::utils::constants::Constants;
 

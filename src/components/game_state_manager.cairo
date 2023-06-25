@@ -3,7 +3,7 @@ use starknet::{ContractAddress, get_caller_address};
 
 
 use mecha_stark::components::turn::{Action, ActionTrait, TypeAction, Turn};
-use mecha_stark::components::game::{Game, MechaAttributes};
+use mecha_stark::components::game::{Game, GameStatus, MechaAttributes};
 use mecha_stark::components::game_state::{GameState, MechaState};
 use mecha_stark::components::position::{Position, PositionTrait};
 use mecha_stark::components::mecha_data_helper::{
@@ -12,18 +12,19 @@ use mecha_stark::components::mecha_data_helper::{
 use mecha_stark::utils::storage::{GameStorageAccess};
 use mecha_stark::utils::serde::{SpanSerde};
 
-fn _validate_game(game_state: GameState, turns: Array<Turn>) -> bool {
-
+fn _validate_game(game_state: GameState, turns: Array<Turn>) -> GameStatus {
     let mut mecha_dict = load_initial_state(game_state);
     let mut mecha_static_data = load_static_data(game_state);
 
     // validar game states
-    // array de mechas == 5
+    assert(game_state.mechas_state_player_1.len() == 5, '');
+    assert(game_state.mechas_state_player_2.len() == 5, '');
 
+    let player_1 = game_state.player_1;
+    let mut ret = GameStatus::Winner1(());
     let mut valid = true;
     let mut idx = 0;
     loop {
-
         if idx == turns.len() {
             break ();
         }
@@ -31,6 +32,7 @@ fn _validate_game(game_state: GameState, turns: Array<Turn>) -> bool {
         let player = *turns.at(idx).player;
 
         // validar que sea su turno
+
         let mut idy = 0;
         loop {
             if idy == actions.len() {
@@ -38,22 +40,26 @@ fn _validate_game(game_state: GameState, turns: Array<Turn>) -> bool {
             }
 
             let action = *actions.at(idy);
-            
-            if !validate_and_execute_action(
-                player, action, ref mecha_dict, ref mecha_static_data
-            ) {
+
+            if !validate_and_execute_action(player, action, ref mecha_dict, ref mecha_static_data) {
                 // HIZO TRAMPA
                 // emitir evento
+                if player == game_state.player_1 {
+                    ret = GameStatus::Cheater1(());
+                } else {
+                    ret = GameStatus::Cheater2(());
+                }
                 valid = false;
                 break ();
             }
-            
-            // if is_game_finished(
-            //     game_state, ref mecha_dict
-            // ) { // TERMINO EL JUEGO
-            //     valid = true;
-            //     break ();
-            // }
+
+            if is_game_finished(game_state, ref mecha_dict) {
+                if player == game_state.player_2 {
+                    ret = GameStatus::Winner2(());
+                }
+                valid = false;
+                break ();
+            }
             idy += 1;
         };
 
@@ -63,7 +69,7 @@ fn _validate_game(game_state: GameState, turns: Array<Turn>) -> bool {
 
         idx += 1;
     };
-    valid
+    ret
 }
 
 fn validate_and_execute_action(
@@ -72,7 +78,6 @@ fn validate_and_execute_action(
     ref mecha_dict: MechaDict,
     ref mecha_static_data: MechaStaticData
 ) -> bool {
-
     // el mecha atacante esta vivo
     if mecha_dict.get_mecha_hp(action.id_mecha) == 0 {
         return false;
@@ -114,20 +119,20 @@ fn validate_and_execute_action(
 }
 
 fn spoof_mecha_attributes(id: u128) -> MechaAttributes {
-        MechaAttributes {
-            id,
-            hp: 100,
-            attack: 10,
-            armor: 10,
-            movement: 5,
-            attack_shoot_distance: 4,
-            attack_meele_distance: 2,
-        }
+    MechaAttributes {
+        id,
+        hp: 100,
+        attack: 55,
+        armor: 10,
+        movement: 5,
+        attack_shoot_distance: 4,
+        attack_meele_distance: 2,
     }
+}
 
 fn load_initial_state(game_state: GameState) -> MechaDict {
     let mut mecha_dict = MechaDictTrait::new();
-    
+
     let mut idx = 0;
     loop {
         if idx == 5 {
@@ -179,54 +184,7 @@ fn load_static_data(game_state: GameState) -> MechaStaticData {
     mecha_data
 }
 
-// fn is_game_finished(
-//     game_state: GameState,
-//     ref mecha_dict: MechaDict,
-// ) -> bool {
-//     let mut idx = 0;
-//     let mut live_players = 0;
-//     loop {
-//         if idx == players.len() {
-//             break ();
-//         }
-//         if live_players == 2 {
-//             break ();
-//         }
-//         let player = *players.at(idx).owner;
-//         if !is_player_finished(player, ref mecha_dict, ref mecha_static_data) {
-//             live_players += 1;
-//         }
-//         idx += 1;
-//     };
-//     live_players == 1
-// }
-
-// fn is_player_finished(
-//     player: ContractAddress, ref mecha_dict: MechaDict, ref mecha_static_data: MechaStaticData
-// ) -> bool {
-//     let mechas_by_player = mecha_static_data.get_mechas_ids_by_owner(player);
-//     let mut idx = 0;
-//     let mut dead_mechas = 0;
-//     loop {
-//         if idx == mechas_by_player.len() {
-//             break ();
-//         }
-//         let mecha_id = *mechas_by_player.at(idx);
-//         let mecha_hp = mecha_dict.get_mecha_hp(mecha_id);
-//         if mecha_hp == 0 {
-//             dead_mechas += 1;
-//         }
-//         idx += 1;
-//     };
-//     dead_mechas == mechas_by_player.len()
-// }
-
-
-fn is_game_finished(
-    game_state: GameState,
-    ref mecha_dict: MechaDict,
-) -> bool {
-
+fn is_game_finished(game_state: GameState, ref mecha_dict: MechaDict, ) -> bool {
     let mut dead_mechas_player_1 = 0;
     let mut dead_mechas_player_2 = 0;
     let mut idx = 0;
@@ -247,13 +205,12 @@ fn is_game_finished(
         if idx == 5 {
             break ();
         }
-        let mecha_state = *game_state.mechas_state_player_1.at(idx);
+        let mecha_state = *game_state.mechas_state_player_2.at(idx);
         let mecha_hp = mecha_dict.get_mecha_hp(mecha_state.id);
         if mecha_hp == 0 {
             dead_mechas_player_2 += 1;
         }
         idx += 1;
     };
-    // dead_mechas_player_1 > dead_mechas_player_2 // revisar
-    true 
+    dead_mechas_player_1 == 5 | dead_mechas_player_2 == 5
 }

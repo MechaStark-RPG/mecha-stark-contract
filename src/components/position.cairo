@@ -31,7 +31,7 @@ impl PositionTraitImpl of PositionTrait {
         distance_x + distance_y
     }
     fn has_default_value(self: @Position) -> bool {
-        *self.x == 100 & *self.y == 100  
+        *self.x == 100 & *self.y == 100
     }
     fn new_default_value() -> Position {
         Position { x: 100, y: 100 }

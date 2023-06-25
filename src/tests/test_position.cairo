@@ -10,7 +10,7 @@ mod tests {
     use mecha_stark::components::position::{Position, PositionTrait};
 
     #[test]
-    #[available_gas(3000000000)]
+    #[available_gas(2000000)]
     fn happy_path() {
         let p1 = Position { x: 1, y: 1 };
         let p2 = Position { x: 2, y: 2 };

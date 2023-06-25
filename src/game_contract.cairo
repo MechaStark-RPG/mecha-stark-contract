@@ -40,11 +40,13 @@ trait IMechaStarkContract {
 #[contract]
 mod MechaStarkContract {
     use array::{ArrayTrait, SpanTrait};
-    use starknet::{ContractAddress, ClassHash, get_caller_address, get_contract_address, replace_class_syscall};
-    use traits::{ Into, TryInto };
+    use starknet::{
+        ContractAddress, ClassHash, get_caller_address, get_contract_address, replace_class_syscall
+    };
+    use traits::{Into, TryInto};
 
     use mecha_stark::components::turn::{Action, ActionTrait, TypeAction, Turn};
-    use mecha_stark::components::game::{Game, MechaAttributes};
+    use mecha_stark::components::game::{Game, GameStatus, MechaAttributes};
     use mecha_stark::components::game_state::{GameState, MechaState};
     use mecha_stark::components::game_state_manager::_validate_game;
     use mecha_stark::components::position::{Position, PositionTrait};
@@ -54,7 +56,7 @@ mod MechaStarkContract {
     use mecha_stark::utils::storage::{GameStorageAccess};
     use mecha_stark::utils::serde::{SpanSerde};
 
-    use super::{ IERC20Dispatcher, IERC20DispatcherTrait };
+    use super::{IERC20Dispatcher, IERC20DispatcherTrait};
 
     struct Storage {
         _owner: ContractAddress,
@@ -92,16 +94,19 @@ mod MechaStarkContract {
 
         // validar que los mechas sean del mismo owner
         let player_address = get_caller_address();
-        _games::write(_count_games::read(), Game {
-            bet: 1,
-            size: 2,
-            status: 0,
-            winner: starknet::contract_address_const::<0>(),
-            player_1: player_address,
-            player_2: starknet::contract_address_const::<0>(),
-            mechas_player_1: mechas_id.span(),
-            mechas_player_2: ArrayTrait::new().span(),
-        });
+        _games::write(
+            _count_games::read(),
+            Game {
+                bet: 1,
+                size: 2,
+                status: 0,
+                winner: starknet::contract_address_const::<0>(),
+                player_1: player_address,
+                player_2: starknet::contract_address_const::<0>(),
+                mechas_player_1: mechas_id.span(),
+                mechas_player_2: ArrayTrait::new().span(),
+            }
+        );
 
         _count_games::write(_count_games::read() + 1);
     }
@@ -112,7 +117,7 @@ mod MechaStarkContract {
         let balance = _balances::read(user);
         assert(balance > 0, 'Dont have balance');
         let usd_token = IERC20Dispatcher { contract_address: _token::read() };
-        _balances::write(user, 0); 
+        _balances::write(user, 0);
         usd_token.mint(user, balance);
     }
 
@@ -141,32 +146,48 @@ mod MechaStarkContract {
         //
 
         let player_address = get_caller_address();
-        _games::write(id_game, Game {
-            bet: game.bet, // ver por que no se guardar en u256
-            size: game.size,
-            status: 1,
-            winner: game.winner,
-            player_1: game.player_1,
-            player_2: player_address,
-            mechas_player_1: game.mechas_player_1,
-            mechas_player_2: mechas_id.span(),
-        });
+        _games::write(
+            id_game,
+            Game {
+                bet: game.bet, // ver por que no se guardar en u256
+                size: game.size,
+                status: 1,
+                winner: game.winner,
+                player_1: game.player_1,
+                player_2: player_address,
+                mechas_player_1: game.mechas_player_1,
+                mechas_player_2: mechas_id.span(),
+            }
+        );
     }
 
     #[view]
     fn validate_game(game_state: GameState, turns: Array<Turn>) -> bool {
-        _validate_game(game_state, turns)
+        match _validate_game(game_state, turns) {
+            GameStatus::Winner1(()) => true,
+            GameStatus::Winner2(()) => true,
+            GameStatus::Cheater1(()) => false,
+            GameStatus::Cheater2(()) => false,
+        }
     }
 
     #[external]
-    fn finish_game(id_game: u128, game_state: GameState, turns: Array<Turn>) {
-        assert_only_owner();
-        if _validate_game(game_state, turns) {
-            // let bet = get_bet_by_game()
-            // _balances::write(user_winner, balance + bet);
-        } else {
-            panic_with_felt252('Mecha stark - finishing game');
-        }
+    fn finish_game(id_game: u128, game_state: GameState, turns: Array<Turn>) {// machear el id game con el game state
+
+    // match _validate_game(game_state, turns) {
+    //     GameStatus::Winner1(()) => {
+
+    //     },
+    //     GameStatus::Winner2(()) => {
+
+    //     },
+    //     GameStatus::Cheater1(()) => {
+
+    //     },
+    //     GameStatus::Cheater2(()) => {
+
+    //     },
+    // };
     }
 
     #[view]

@@ -11,7 +11,7 @@ mod tests {
     use mecha_stark::game_contract::{
         MechaStarkContract, IMechaStarkContractDispatcher, IMechaStarkContractDispatcherTrait
     };
-    
+
     use mecha_stark::components::turn::{Action, ActionTrait, TypeAction, Turn};
     use mecha_stark::components::game::{Game, MechaAttributes};
     use mecha_stark::components::game_state::{GameState, MechaState};
@@ -28,7 +28,7 @@ mod tests {
             .unwrap();
 
         let contract0 = IMechaStarkContractDispatcher { contract_address };
-        
+
         let mut mechas = ArrayTrait::new();
         mechas.append(923);
         mechas.append(123);
@@ -39,7 +39,7 @@ mod tests {
         let user = starknet::contract_address_const::<0>();
         contract0.create_game(mechas, 5, user);
 
-        let game_0 = contract0.get_game(0); 
+        let game_0 = contract0.get_game(0);
 
         assert(game_0.mechas_player_1.len() == 5, 'Falle en game storage');
         assert(*game_0.mechas_player_1.at(0) == 923, 'Falle en game storage');
@@ -47,7 +47,6 @@ mod tests {
         assert(*game_0.mechas_player_1.at(2) == 3, 'Falle en game storage');
         assert(*game_0.mechas_player_1.at(3) == 4, 'Falle en game storage');
         assert(*game_0.mechas_player_1.at(4) == 5, 'Falle en game storage');
-        
 
         let mut mechas_2 = ArrayTrait::new();
         mechas_2.append(9);
@@ -59,7 +58,7 @@ mod tests {
         let user_2 = starknet::contract_address_const::<0>();
         contract0.join_game(0, mechas_2, user_2);
 
-        let game_0 = contract0.get_game(0); 
+        let game_0 = contract0.get_game(0);
 
         assert(game_0.mechas_player_1.len() == 5, 'Falle en game storage');
         assert(*game_0.mechas_player_1.at(0) == 923, 'Falle en game storage');
@@ -67,7 +66,7 @@ mod tests {
         assert(*game_0.mechas_player_1.at(2) == 3, 'Falle en game storage');
         assert(*game_0.mechas_player_1.at(3) == 4, 'Falle en game storage');
         assert(*game_0.mechas_player_1.at(4) == 5, 'Falle en game storage');
-        
+
         assert(game_0.mechas_player_2.len() == 5, 'Falle en game storage');
         assert(*game_0.mechas_player_2.at(0) == 9, 'Falle en game storage');
         assert(*game_0.mechas_player_2.at(1) == 8, 'Falle en game storage');

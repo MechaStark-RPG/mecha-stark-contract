@@ -1,7 +1,7 @@
 use traits::{Into, TryInto};
 use starknet::ContractAddress;
 
-use mecha_stark::components::game::{MechaAttributes, MechaAttributesTrait};
+use mecha_stark::components::game::{MechaAttributes};
 use mecha_stark::components::game_state::{MechaState};
 use mecha_stark::components::mecha_data_helper::{
     MechaDict, MechaDictTrait, MechaStaticData, MechaStaticDataTrait
@@ -47,7 +47,6 @@ impl ActionTraitImpl of ActionTrait {
         ref mecha_dict: MechaDict,
         ref mecha_static_data: MechaStaticData
     ) -> bool {
-
         // ataco dentro del mapa
         if !position_within_the_map(*self.attack) {
             return false;
@@ -84,7 +83,6 @@ impl ActionTraitImpl of ActionTrait {
         ref mecha_dict: MechaDict,
         ref mecha_static_data: MechaStaticData
     ) -> bool {
-
         // movimiento dentro del mapa
         if !position_within_the_map(*self.movement) {
             return false;
