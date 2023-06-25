@@ -4,19 +4,12 @@ use traits::{Into, TryInto};
 use starknet::ContractAddress;
 
 use mecha_stark::components::game::{MechaAttributes, MechaAttributesTrait};
-use mecha_stark::components::game_state::{MechaState, MechaStateTrait};
+use mecha_stark::components::game_state::{MechaState};
 use mecha_stark::components::position::{
     Position, PositionTrait, IntoU128ToPositionImpl, IntoPositionToU128Impl, IntoFelt252ToPositionImpl,
     IntoPositionToFelt252Impl, PositionPartialEq
 };
 use mecha_stark::utils::constants::Constants;
-
-
-#[derive(Drop)]
-struct MechaStaticData {
-    owners: Array<ContractAddress>,
-    attributes: Array<MechaAttributes>,
-}
 
 #[derive(Destruct)]
 struct MechaDict {
@@ -50,16 +43,15 @@ impl MechaDictTraitImpl of MechaDictTrait {
 
     fn get_mecha_id_by_position(ref self: MechaDict, position: Position) -> u128 {
         let mecha_id = self.mechas_for_positions.get(position.into());
-        if mecha_id == 0 {
-            panic_with_felt252('Mecha data - Invalid position');
-        }
+        // si mecha_id es 0 es porque no hay mecha en esa posicion
         mecha_id
     }
 
     fn get_position_by_mecha_id(ref self: MechaDict, mecha_id: u128) -> Position {
         let position = self.positions_for_mechas.get(mecha_id.into());
-        if position == 0 {
-            panic_with_felt252('Mecha data - Invalid mecha id');
+        let position: Position = position.into();
+        if position.has_default_value() {
+            panic_with_felt252('Mecha data - Invalid position');
         }
         position.into()
     }
@@ -86,7 +78,7 @@ impl MechaDictTraitImpl of MechaDictTrait {
         let (_, mecha_attack_attribute) = mecha_static_data.get_mecha_data_by_mecha_id(id_mecha);
         let mecha_received_id = self.get_mecha_id_by_position(position_attack);
         let mecha_received_hp = self.get_mecha_hp(mecha_received_id);
-        // fijarse que no se pase a negativo
+        // evitar numero negativo
         if mecha_received_hp < mecha_attack_attribute.attack {
             self.set_mecha_hp(mecha_received_id, 0);
             self.update_mecha_position(mecha_received_id, PositionTrait::new_default_value());
@@ -96,12 +88,17 @@ impl MechaDictTraitImpl of MechaDictTrait {
     }
 }
 
+#[derive(Drop)]
+struct MechaStaticData {
+    owners: Array<ContractAddress>,
+    attributes: Array<MechaAttributes>,
+}
+
 trait MechaStaticDataTrait {
     fn new() -> MechaStaticData;
     fn get_mecha_data_by_mecha_id(
         self: @MechaStaticData, mecha_id: u128
     ) -> (ContractAddress, MechaAttributes);
-    fn get_mechas_ids_by_owner(self: @MechaStaticData, owner: ContractAddress) -> Array<u128>;
     fn insert_mecha_data(
         ref self: MechaStaticData, owner: ContractAddress, attributes: MechaAttributes
     );
@@ -118,24 +115,6 @@ impl MechaStaticDataImpl of MechaStaticDataTrait {
         self: @MechaStaticData, mecha_id: u128
     ) -> (ContractAddress, MechaAttributes) {
         _get_mecha_data_by_mecha_id(self, mecha_id, 0)
-    }
-
-    fn get_mechas_ids_by_owner(self: @MechaStaticData, owner: ContractAddress) -> Array<u128> {
-        let mut mechas: Array<u128> = ArrayTrait::new();
-        // let mut idx = 0;
-        // loop {
-        //     if idx == self.owners.len() {
-        //         break ();
-        //     }
-
-        //     let mecha_owner = *self.owners.at(idx);
-        //     if mecha_owner == owner {
-        //         let attribute = *self.attributes.at(idx);
-        //         mechas.append(attribute.id);
-        //     }
-        //     idx += 1;
-        // };
-        mechas
     }
 
     fn insert_mecha_data(

@@ -1,7 +1,7 @@
 use mecha_stark::components::turn::{Turn};
 use mecha_stark::components::game::{Game};
 use mecha_stark::components::game_state::{GameState};
-use starknet::ContractAddress;
+use starknet::{ContractAddress, ClassHash};
 
 #[abi]
 trait IERC20 {
@@ -22,9 +22,9 @@ trait IERC20 {
 #[abi]
 trait IMechaStarkContract {
     #[external]
-    fn create_game(mechas_id: Array<felt252>, bet: u256, user: ContractAddress);
+    fn create_game(mechas_id: Array<felt252>, bet: u256);
     #[external]
-    fn join_game(id_game: u128, mechas_id: Array<felt252>, user: ContractAddress);
+    fn join_game(id_game: u128, mechas_id: Array<felt252>);
     #[view]
     fn validate_game(game_state: GameState, turns: Array<Turn>) -> bool;
     #[external]
@@ -33,17 +33,19 @@ trait IMechaStarkContract {
     fn get_game(id_game: u128) -> Game;
     #[external]
     fn claimRewards(user: ContractAddress);
+    #[external]
+    fn upgrade(new_class_hash: ClassHash);
 }
 
 #[contract]
 mod MechaStarkContract {
     use array::{ArrayTrait, SpanTrait};
-    use starknet::{ContractAddress, get_caller_address, get_contract_address};
+    use starknet::{ContractAddress, ClassHash, get_caller_address, get_contract_address, replace_class_syscall};
     use traits::{ Into, TryInto };
 
     use mecha_stark::components::turn::{Action, ActionTrait, TypeAction, Turn};
-    use mecha_stark::components::game::{Game, StatusGame, MechaAttributes};
-    use mecha_stark::components::game_state::{GameState, PlayerState, MechaState};
+    use mecha_stark::components::game::{Game, MechaAttributes};
+    use mecha_stark::components::game_state::{GameState, MechaState};
     use mecha_stark::components::game_state_manager::_validate_game;
     use mecha_stark::components::position::{Position, PositionTrait};
     use mecha_stark::components::mecha_data_helper::{
@@ -70,30 +72,30 @@ mod MechaStarkContract {
     }
 
     #[external]
-    fn create_game(mechas_id: Array<felt252>, bet: u256, user: ContractAddress) {
+    fn create_game(mechas_id: Array<felt252>, bet: u256) {
         assert(mechas_id.len() == 5, 'Se deben enviar 5 mechas');
 
         // apuesta
         // si ya tengo balance que me deje jugar directo
-        let balance = _balances::read(user);
-        if balance < bet {
-            let contract = get_contract_address();
-            let usd_token = IERC20Dispatcher { contract_address: _token::read() };
-            let approved: u256 = usd_token.allowance(user, contract);
-            assert(approved > bet, 'Not approved');
-            usd_token.transferFrom(user, contract, bet);
-        } else {
-            _balances::write(user, balance - bet);
-        }
+        // let balance = _balances::read(user);
+        // if balance < bet {
+        //     let contract = get_contract_address();
+        //     let token = IERC20Dispatcher { contract_address: _token::read() };
+        //     let approved: u256 = token.allowance(user, contract);
+        //     assert(approved > bet, 'Not approved');
+        //     token.transferFrom(user, contract, bet);
+        // } else {
+        //     _balances::write(user, balance - bet);
+        // }
         // emitir evento
         //
 
-        // Validar que los mechas sean del mismo owner
+        // validar que los mechas sean del mismo owner
         let player_address = get_caller_address();
         _games::write(_count_games::read(), Game {
             bet: 1,
             size: 2,
-            status: StatusGame::Waiting(()),
+            status: 0,
             winner: starknet::contract_address_const::<0>(),
             player_1: player_address,
             player_2: starknet::contract_address_const::<0>(),
@@ -115,26 +117,26 @@ mod MechaStarkContract {
     }
 
     #[external]
-    fn join_game(id_game: u128, mechas_id: Array<felt252>, user: ContractAddress) {
-
+    fn join_game(id_game: u128, mechas_id: Array<felt252>) {
         assert(mechas_id.len() == 5, 'Se deben enviar 5 mechas');
+
         // Validar que los mechas sean del mismo owner
         let game = _games::read(id_game);
         // assert(game.status == StatusGame::Waiting(()), 'join_game - game is not waiting');
 
         // apuesta
         // si ya tengo balance que me deje jugar directo
-        let balance = _balances::read(user);
-        let bet = 1_u256; // ver por que no se guardar en u256
-        if balance < bet {
-            let contract = get_contract_address();
-            let usd_token = IERC20Dispatcher { contract_address: _token::read() };
-            let approved: u256 = usd_token.allowance(user, contract);
-            assert(approved > bet, 'Not approved');
-            usd_token.transferFrom(user, contract, bet);
-        } else {
-            _balances::write(user, balance - bet);
-        }
+        // let balance = _balances::read(user);
+        // let bet = 1_u256; // ver por que no se guardar en u256
+        // if balance < bet {
+        //     let contract = get_contract_address();
+        //     let usd_token = IERC20Dispatcher { contract_address: _token::read() };
+        //     let approved: u256 = usd_token.allowance(user, contract);
+        //     assert(approved > bet, 'Not approved');
+        //     usd_token.transferFrom(user, contract, bet);
+        // } else {
+        //     _balances::write(user, balance - bet);
+        // }
         // emitir evento
         //
 
@@ -142,7 +144,7 @@ mod MechaStarkContract {
         _games::write(id_game, Game {
             bet: game.bet, // ver por que no se guardar en u256
             size: game.size,
-            status: StatusGame::Progress(()),
+            status: 1,
             winner: game.winner,
             player_1: game.player_1,
             player_2: player_address,
@@ -170,6 +172,12 @@ mod MechaStarkContract {
     #[view]
     fn get_game(id_game: u128) -> Game {
         _games::read(id_game)
+    }
+
+    #[external]
+    fn upgrade(new_class_hash: ClassHash) {
+        assert_only_owner();
+        replace_class_syscall(new_class_hash);
     }
 
     fn assert_only_owner() {

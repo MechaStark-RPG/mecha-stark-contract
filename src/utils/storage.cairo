@@ -9,7 +9,7 @@ use starknet::{
 
 use integer::{Felt252TryIntoU128, U128IntoFelt252};
 
-use mecha_stark::components::game::{Game, StatusGame, IntoFelt252StatusGameImpl, IntoStatusGameFelt252Impl};
+use mecha_stark::components::game::{Game};
 use mecha_stark::utils::serde::{SpanSerde};
 
 impl ContractAddressSpanStorageAccess of StorageAccess<Span<ContractAddress>> {
@@ -149,19 +149,6 @@ impl Felt252SpanStorageAccess of StorageAccess<Span<felt252>> {
         StorageAccess::<felt252>::write(:address_domain, :base, value: len.into())
     }
 }
-
-impl StorageAccessStatusGameImpl of StorageAccess<StatusGame> {
-    fn write(address_domain: u32, base: StorageBaseAddress, value: StatusGame) -> SyscallResult<()> {
-        storage_write_syscall(address_domain, storage_address_from_base_and_offset(base, 0_u8), value.into());
-        SyscallResult::Ok(())
-    }
-
-    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<StatusGame> {
-        let mut stored_value = storage_read_syscall(address_domain, storage_address_from_base_and_offset(base, 0_u8))?;
-        Result::Ok(stored_value.into())
-    }
-}
-
 
 impl GameStorageAccess of StorageAccess<Game> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Game> {

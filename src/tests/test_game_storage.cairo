@@ -14,9 +14,8 @@ mod tests {
     
     use mecha_stark::components::turn::{Action, ActionTrait, TypeAction, Turn};
     use mecha_stark::components::game::{Game, MechaAttributes};
-    use mecha_stark::components::game_state::{GameState, PlayerState, MechaState};
+    use mecha_stark::components::game_state::{GameState, MechaState};
     use mecha_stark::components::position::{Position};
-    use debug::PrintTrait;
 
     #[test]
     #[available_gas(300000000)]

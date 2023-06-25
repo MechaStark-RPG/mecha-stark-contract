@@ -2,7 +2,7 @@ use traits::{Into, TryInto};
 use starknet::ContractAddress;
 
 use mecha_stark::components::game::{MechaAttributes, MechaAttributesTrait};
-use mecha_stark::components::game_state::{MechaState, MechaStateTrait};
+use mecha_stark::components::game_state::{MechaState};
 use mecha_stark::components::mecha_data_helper::{
     MechaDict, MechaDictTrait, MechaStaticData, MechaStaticDataTrait
 };
@@ -48,12 +48,12 @@ impl ActionTraitImpl of ActionTrait {
         ref mecha_static_data: MechaStaticData
     ) -> bool {
 
-        // Donde ataco dentro del mapa
+        // ataco dentro del mapa
         if !position_within_the_map(*self.attack) {
             return false;
         }
 
-        // Esta dentro del rango de ataque
+        // dentro del rango de ataque
         let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(*self.id_mecha);
         let mecha_distance = mecha_dict
             .get_position_by_mecha_id(*self.id_mecha)
@@ -62,7 +62,7 @@ impl ActionTraitImpl of ActionTrait {
             return false;
         }
 
-        // Hay un mecha enemigo en esa posicion
+        // mecha enemigo en esa posicion
         let mecha_id_received = mecha_dict.get_mecha_id_by_position(*self.attack.into());
         if mecha_id_received == 0 {
             return false;
@@ -75,7 +75,6 @@ impl ActionTraitImpl of ActionTrait {
         if mecha_id_received_hp == 0 {
             return false;
         }
-
         true
     }
 
@@ -86,14 +85,17 @@ impl ActionTraitImpl of ActionTrait {
         ref mecha_static_data: MechaStaticData
     ) -> bool {
 
+        // movimiento dentro del mapa
         if !position_within_the_map(*self.movement) {
             return false;
         }
 
-        if mecha_dict.get_mecha_id_by_position(*self.movement.into()) == 0 {
+        // esta ocupado el lugar
+        if mecha_dict.get_mecha_id_by_position(*self.movement.into()) > 0 {
             return false;
         }
 
+        // dentro del rango de movimiento
         let (_, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(*self.id_mecha);
         let mecha_distance = mecha_dict
             .get_position_by_mecha_id(*self.id_mecha)
@@ -130,5 +132,5 @@ impl IntoActionFelt252Impl of Into<felt252, TypeAction> {
 }
 
 fn position_within_the_map(position: Position) -> bool {
-    position.x < Constants::BOARD_HEIGHT & position.y < Constants::BOARD_WIDTH
+    position.x < Constants::BOARD_WIDTH & position.y < Constants::BOARD_HEIGHT
 }

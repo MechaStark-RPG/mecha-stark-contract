@@ -16,6 +16,10 @@ mod tests {
     use mecha_stark::components::game::{Game, MechaAttributes};
     use mecha_stark::components::game_state::{GameState, MechaState};
     use mecha_stark::components::position::{Position};
+    use mecha_stark::components::mecha_data_helper::{
+        MechaDict, MechaDictTrait, MechaStaticData, MechaStaticDataTrait
+    };
+    use mecha_stark::components::game_state_manager::{load_initial_state, load_static_data};
 
     #[test]
     #[available_gas(3000000000)]
@@ -166,6 +170,84 @@ mod tests {
         
         let game_state = GameState { id_game, player_1, player_2, mechas_state_player_1: mechas_player_1.span(), mechas_state_player_2: mechas_player_2.span() };
         
-        assert(contract0.validate_game(game_state, turns) == false, 'Falle en validate game');
+        // MECHA DICT
+        let mut mecha_dict = load_initial_state(game_state);
+
+        // PLAYER 1
+        assert(mecha_dict.get_position_by_mecha_id(1) == Position { x: 2, y: 0 }, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(1) == 100, 'test mecha helper');
+
+        assert(mecha_dict.get_position_by_mecha_id(2) == Position { x: 2, y: 1 }, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(2) == 100, 'test mecha helper');
+
+        assert(mecha_dict.get_position_by_mecha_id(3) == Position { x: 2, y: 2 }, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(3) == 100, 'test mecha helper');
+
+        assert(mecha_dict.get_position_by_mecha_id(4) == Position { x: 2, y: 3 }, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(4) == 100, 'test mecha helper');
+
+        assert(mecha_dict.get_position_by_mecha_id(5) == Position { x: 2, y: 4 }, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(5) == 100, 'test mecha helper');
+
+        // PLAYER 2
+        assert(mecha_dict.get_position_by_mecha_id(6) == Position { x: 5, y: 0 }, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(6) == 100, 'test mecha helper');
+
+        assert(mecha_dict.get_position_by_mecha_id(7) == Position { x: 5, y: 1 }, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(7) == 100, 'test mecha helper');
+
+        assert(mecha_dict.get_position_by_mecha_id(8) == Position { x: 5, y: 2 }, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(8) == 100, 'test mecha helper');
+
+        assert(mecha_dict.get_position_by_mecha_id(9) == Position { x: 5, y: 3 }, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(9) == 100, 'test mecha helper');
+
+        assert(mecha_dict.get_position_by_mecha_id(10) == Position { x: 5, y: 4 }, 'test mecha helper');
+        assert(mecha_dict.get_mecha_hp(10) == 100, 'test mecha helper');
+    
+        // MECHA DATA
+        let mut mecha_static_data = load_static_data(game_state);
+
+        // PLAYER 1
+        let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(1);
+        assert(mecha_attributes.id == 1, 'test mecha helper');
+        assert(owner == player_1, 'test mecha helper');
+
+        let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(2);
+        assert(mecha_attributes.id == 2, 'test mecha helper');
+        assert(owner == player_1, 'test mecha helper');
+
+        let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(3);
+        assert(mecha_attributes.id == 3, 'test mecha helper');
+        assert(owner == player_1, 'test mecha helper');
+
+        let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(4);
+        assert(mecha_attributes.id == 4, 'test mecha helper');
+        assert(owner == player_1, 'test mecha helper');
+
+        let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(5);
+        assert(mecha_attributes.id == 5, 'test mecha helper');
+        assert(owner == player_1, 'test mecha helper');
+
+        // PLAYER 2
+        let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(6);
+        assert(mecha_attributes.id == 6, 'test mecha helper');
+        assert(owner == player_2, 'test mecha helper');
+
+        let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(7);
+        assert(mecha_attributes.id == 7, 'test mecha helper');
+        assert(owner == player_2, 'test mecha helper');
+
+        let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(8);
+        assert(mecha_attributes.id == 8, 'test mecha helper');
+        assert(owner == player_2, 'test mecha helper');
+
+        let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(9);
+        assert(mecha_attributes.id == 9, 'test mecha helper');
+        assert(owner == player_2, 'test mecha helper');
+
+        let (owner, mecha_attributes) = mecha_static_data.get_mecha_data_by_mecha_id(10);
+        assert(mecha_attributes.id == 10, 'test mecha helper');
+        assert(owner == player_2, 'test mecha helper');
     }
 }

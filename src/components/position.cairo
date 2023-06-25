@@ -18,11 +18,17 @@ trait PositionTrait {
 
 impl PositionTraitImpl of PositionTrait {
     fn distance(self: @Position, target: Position) -> u128 {
-        let x = *self.x - target.x;
-        let y = *self.y - target.y;
-        // let ret: felt252 = u128_sqrt(x * x + y * y).into();
-        // ret.try_into().unwrap()
-        1
+        let distance_x = if *self.x > target.x {
+            *self.x - target.x
+        } else {
+            target.x - *self.x
+        };
+        let distance_y = if *self.y > target.y {
+            *self.y - target.y
+        } else {
+            target.y - *self.y
+        };
+        distance_x + distance_y
     }
     fn has_default_value(self: @Position) -> bool {
         *self.x == 100 & *self.y == 100  
